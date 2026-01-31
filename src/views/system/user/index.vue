@@ -40,7 +40,7 @@
 <script setup lang="ts">
   import ArtButtonTable from '@/components/core/forms/art-button-table/index.vue'
   import { useTable } from '@/hooks/core/useTable'
-  import { fetchGetUserList } from '@/api/system-manage'
+  import { fetchGetUserList, deleteUserById } from '@/api/system-manage'
   import UserSearch from './modules/user-search.vue'
   import UserDialog from './modules/user-dialog.vue'
   import { ElTag, ElMessageBox } from 'element-plus'
@@ -141,7 +141,7 @@
           prop: 'tenure',
           label: '在职时长',
           align: 'center',
-          formatter: (row) => row.tenure ? `${row.tenure} 年` : '0.0 年'
+          formatter: (row) => (row.tenure ? `${row.tenure} 年` : '0.0 年')
         },
         {
           prop: 'hireDate',
@@ -216,9 +216,15 @@
       confirmButtonText: '确定',
       cancelButtonText: '取消',
       type: 'error'
-    }).then(() => {
-      ElMessage.success('删除成功')
-      refreshData()
+    }).then(async () => {
+      try {
+        await deleteUserById(row.id)
+        ElMessage.success('删除成功')
+        refreshData()
+      } catch (error) {
+        console.error('删除用户失败:', error)
+        ElMessage.error('删除失败，请重试')
+      }
     })
   }
 

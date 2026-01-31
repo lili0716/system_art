@@ -46,7 +46,11 @@
       </ElFormItem>
 
       <!-- 编辑时：离职日期（当状态为离职时显示，必填） -->
-      <ElFormItem v-if="dialogType === 'edit' && formData.status === '2'" label="离职日期" prop="leaveDate">
+      <ElFormItem
+        v-if="dialogType === 'edit' && formData.status === '2'"
+        label="离职日期"
+        prop="leaveDate"
+      >
         <ElDatePicker
           v-model="formData.leaveDate"
           type="date"
@@ -59,12 +63,7 @@
 
       <!-- 备注 -->
       <ElFormItem label="备注" prop="remark">
-        <ElInput
-          v-model="formData.remark"
-          type="textarea"
-          :rows="3"
-          placeholder="请输入备注"
-        />
+        <ElInput v-model="formData.remark" type="textarea" :rows="3" placeholder="请输入备注" />
       </ElFormItem>
     </ElForm>
 
@@ -79,6 +78,7 @@
 
 <script setup lang="ts">
   import type { FormInstance, FormRules } from 'element-plus'
+  import { createUser, updateUser } from '@/api/system-manage'
 
   interface Props {
     visible: boolean
@@ -124,18 +124,19 @@
       { min: 2, max: 20, message: '长度在 2 到 20 个字符', trigger: 'blur' }
     ],
     userGender: [{ required: true, message: '请选择性别', trigger: 'change' }],
-    employeeId: [
-      { required: true, message: '请输入工号', trigger: 'blur' }
-    ],
-    hireDate: dialogType.value === 'add' 
-      ? [{ required: true, message: '请选择入职日期', trigger: 'change' }]
-      : [],
-    status: dialogType.value === 'edit'
-      ? [{ required: true, message: '请选择在职状态', trigger: 'change' }]
-      : [],
-    leaveDate: dialogType.value === 'edit' && formData.status === '2'
-      ? [{ required: true, message: '请选择离职日期', trigger: 'change' }]
-      : []
+    employeeId: [{ required: true, message: '请输入工号', trigger: 'blur' }],
+    hireDate:
+      dialogType.value === 'add'
+        ? [{ required: true, message: '请选择入职日期', trigger: 'change' }]
+        : [],
+    status:
+      dialogType.value === 'edit'
+        ? [{ required: true, message: '请选择在职状态', trigger: 'change' }]
+        : [],
+    leaveDate:
+      dialogType.value === 'edit' && formData.status === '2'
+        ? [{ required: true, message: '请选择离职日期', trigger: 'change' }]
+        : []
   }))
 
   /**
@@ -186,13 +187,22 @@
   const handleSubmit = async () => {
     if (!formRef.value) return
 
-    await formRef.value.validate((valid) => {
+    await formRef.value.validate(async (valid) => {
       if (valid) {
-        // TODO: 调用 API 保存用户数据
-        console.log('提交数据:', formData)
-        ElMessage.success(dialogType.value === 'add' ? '添加成功' : '更新成功')
-        dialogVisible.value = false
-        emit('submit')
+        try {
+          if (dialogType.value === 'add') {
+            await createUser(formData)
+            ElMessage.success('添加成功')
+          } else {
+            await updateUser(formData)
+            ElMessage.success('更新成功')
+          }
+          dialogVisible.value = false
+          emit('submit')
+        } catch (error) {
+          console.error('保存用户失败:', error)
+          ElMessage.error('保存失败，请重试')
+        }
       }
     })
   }

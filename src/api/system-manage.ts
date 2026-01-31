@@ -9,6 +9,28 @@ export function fetchGetUserList(params: Api.SystemManage.UserSearchParams) {
   })
 }
 
+// 创建用户
+export function createUser(data: any) {
+  return request.post({
+    url: '/api/users',
+    data
+  })
+}
+
+// 更新用户
+export function updateUser(data: any) {
+  return request.put({
+    url: '/api/users',
+    data
+  })
+}
+
+// 删除用户
+export function deleteUserById(id: number) {
+  return request.del({
+    url: `/api/users/${id}`
+  })
+}
 
 export function searchUsers(params: any) {
   return request.get({
@@ -62,7 +84,7 @@ export function updateAttendanceRule(id: number, data: any) {
 export function deleteAttendanceRule(id: number) {
   return request.del({
     url: `/api/attendance/rules/${id}`
-  });
+  })
 }
 
 export function queryAttendanceRules(params: any) {
