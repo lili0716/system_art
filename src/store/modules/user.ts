@@ -169,6 +169,12 @@ export const useUserStore = defineStore(
       // 跳转到登录页，携带当前路由作为 redirect 参数
       const currentRoute = router.currentRoute.value
       const redirect = currentRoute.path !== '/login' ? currentRoute.fullPath : undefined
+
+      // Call backend logout
+      import('@/api/auth').then(({ fetchLogout }) => {
+        fetchLogout().catch(() => { })
+      })
+
       router.push({
         name: 'Login',
         query: redirect ? { redirect } : undefined

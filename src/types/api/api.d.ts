@@ -82,6 +82,17 @@ declare namespace Api {
       userName: string
       email: string
       avatar?: string
+      attendanceRule?: {
+        workInTime: string
+        workOutTime: string
+        workInStartTime?: string
+        workInEndTime?: string
+        workOutStartTime?: string
+        workOutEndTime?: string
+        lunchStartTime?: string
+        lunchEndTime?: string
+        standardWorkHours?: number
+      }
     }
   }
 
@@ -95,22 +106,30 @@ declare namespace Api {
       id: number
       avatar: string
       status: string
-      userName: string
+      userName: string // Display name? Or login? nickName is usually display name.
+      employeeId: string // Added
       userGender: string
       nickName: string
       userPhone: string
-      userEmail: string
-      userRoles: string[]
+      email: string // Renamed from userEmail in backend or frontend usage? index.vue uses email.
+      roles: { id: number; roleName: string; roleCode: string }[] // Changed from string[] to object array as per UserDialog usage
+      department: { id: number; name: string } // Added
       createBy: string
       createTime: string
       updateBy: string
       updateTime: string
+      salary?: string
+      idCard?: string
+      hireDate?: string
+      leaveDate?: string
+      remark?: string
+      tenure?: string
     }
 
     /** 用户搜索参数 */
     type UserSearchParams = Partial<
       Pick<UserListItem, 'id' | 'userName' | 'userGender' | 'userPhone' | 'userEmail' | 'status'> &
-        Api.Common.CommonSearchParams
+      Api.Common.CommonSearchParams
     >
 
     /** 角色列表 */
@@ -129,7 +148,7 @@ declare namespace Api {
     /** 角色搜索参数 */
     type RoleSearchParams = Partial<
       Pick<RoleListItem, 'roleId' | 'roleName' | 'roleCode' | 'description' | 'enabled'> &
-        Api.Common.CommonSearchParams
+      Api.Common.CommonSearchParams
     >
   }
 }

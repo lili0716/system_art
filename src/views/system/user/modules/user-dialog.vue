@@ -1,12 +1,12 @@
 <template>
   <ElDialog
     v-model="dialogVisible"
-    :title="dialogType === 'add' ? '新增用户' : '编辑用户'"
-    width="500px"
+    :title="dialogType === 'add' ? '新员工入职' : (dialogType === 'view' ? '查看详情' : '编辑用户')"
+    width="600px"
     align-center
     @close="handleClose"
   >
-    <ElForm ref="formRef" :model="formData" :rules="rules" label-width="100px">
+    <ElForm ref="formRef" :model="formData" :rules="rules" label-width="100px" :disabled="dialogType === 'view'">
       <!-- 姓名 -->
       <ElFormItem label="姓名" prop="nickName">
         <ElInput v-model="formData.nickName" placeholder="请输入姓名" />
@@ -25,8 +25,43 @@
         <ElInput v-model="formData.employeeId" placeholder="请输入工号" />
       </ElFormItem>
 
+      <!-- 身份证号 -->
+      <ElFormItem label="身份证号" prop="idCard">
+        <ElInput v-model="formData.idCard" placeholder="请输入身份证号" />
+      </ElFormItem>
+
+
+      <!-- 部门 -->
+      <ElFormItem label="工作部门" prop="departmentId">
+        <ElTreeSelect
+          v-model="formData.departmentId"
+          :data="departmentTree"
+          :props="{ label: 'name', value: 'id' }"
+          check-strictly
+          placeholder="请选择工作部门"
+          style="width: 100%"
+        />
+      </ElFormItem>
+
+      <!-- 角色 -->
+      <ElFormItem label="角色" prop="roleIds">
+        <ElSelect
+          v-model="formData.roleIds"
+          multiple
+          placeholder="请选择角色"
+          style="width: 100%"
+        >
+          <ElOption
+            v-for="role in roleList"
+            :key="role.roleId"
+            :label="role.roleName"
+            :value="role.roleId"
+          />
+        </ElSelect>
+      </ElFormItem>
+
       <!-- 新增时：入职日期（必填） -->
-      <ElFormItem v-if="dialogType === 'add'" label="入职日期" prop="hireDate">
+      <ElFormItem v-if="dialogType === 'add' || formData.hireDate" label="入职日期" prop="hireDate">
         <ElDatePicker
           v-model="formData.hireDate"
           type="date"
@@ -37,17 +72,17 @@
         />
       </ElFormItem>
 
-      <!-- 编辑时：在职状态 -->
-      <ElFormItem v-if="dialogType === 'edit'" label="在职状态" prop="status">
+      <!-- 编辑/查看时：在职状态 -->
+      <ElFormItem v-if="dialogType !== 'add'" label="在职状态" prop="status">
         <ElSelect v-model="formData.status" placeholder="请选择在职状态" style="width: 100%">
           <ElOption label="在职" value="1" />
           <ElOption label="离职" value="2" />
         </ElSelect>
       </ElFormItem>
 
-      <!-- 编辑时：离职日期（当状态为离职时显示，必填） -->
+      <!-- 编辑/查看时：离职日期 -->
       <ElFormItem
-        v-if="dialogType === 'edit' && formData.status === '2'"
+        v-if="dialogType !== 'add' && formData.status === '2'"
         label="离职日期"
         prop="leaveDate"
       >
@@ -69,8 +104,8 @@
 
     <template #footer>
       <div class="dialog-footer">
-        <ElButton @click="dialogVisible = false">取消</ElButton>
-        <ElButton type="primary" @click="handleSubmit">提交</ElButton>
+        <ElButton @click="dialogVisible = false">{{ dialogType === 'view' ? '关闭' : '取消' }}</ElButton>
+        <ElButton v-if="dialogType !== 'view'" type="primary" @click="handleSubmit">提交</ElButton>
       </div>
     </template>
   </ElDialog>
@@ -78,13 +113,19 @@
 
 <script setup lang="ts">
   import type { FormInstance, FormRules } from 'element-plus'
-  import { createUser, updateUser } from '@/api/system-manage'
+  import {
+    createUser,
+    updateUser,
+    getDepartmentOptions,
+    getRoleOptions
+  } from '@/api/system-manage'
 
   interface Props {
     visible: boolean
-    type: string
+    type: string // Using string to allow 'view' without strict type check issues if DialogType import is tricky here
     userData?: Partial<Api.SystemManage.UserListItem>
   }
+
 
   interface Emits {
     (e: 'update:visible', value: boolean): void
@@ -105,12 +146,20 @@
   // 表单实例
   const formRef = ref<FormInstance>()
 
+  // 数据源
+  const departmentTree = ref<any[]>([])
+  const roleList = ref<Api.SystemManage.RoleListItem[]>([])
+
   // 表单数据
   const formData = reactive({
     id: undefined as number | undefined,
     nickName: '',
     userGender: '男',
     employeeId: '',
+    idCard: '',
+    // salary: '',
+    departmentId: undefined as number | undefined,
+    roleIds: [] as number[],
     status: '1',
     hireDate: '',
     leaveDate: '',
@@ -125,6 +174,9 @@
     ],
     userGender: [{ required: true, message: '请选择性别', trigger: 'change' }],
     employeeId: [{ required: true, message: '请输入工号', trigger: 'blur' }],
+    idCard: [{ required: true, message: '请输入身份证号', trigger: 'blur' }],
+    departmentId: [{ required: true, message: '请选择工作部门', trigger: 'change' }],
+    roleIds: [{ required: true, message: '请选择角色', trigger: 'change' }],
     hireDate:
       dialogType.value === 'add'
         ? [{ required: true, message: '请选择入职日期', trigger: 'change' }]
@@ -140,17 +192,55 @@
   }))
 
   /**
+   * 加载基础数据
+   */
+  const loadBasicData = async () => {
+    try {
+      const deptRes = (await getDepartmentOptions()) as any
+      // request utility unwraps response, returns valid data or throws error
+      if (deptRes) {
+        departmentTree.value = deptRes.nodes || []
+      }
+      
+      const roleRes = (await getRoleOptions()) as any
+      if (roleRes) {
+        // request utility returns the data payload directly (List<Role>)
+        roleList.value = roleRes || []
+      }
+    } catch (error) {
+      console.error('加载基础数据失败:', error)
+    }
+  }
+
+  /**
    * 初始化表单数据
    */
   const initFormData = () => {
-    const isEdit = props.type === 'edit' && props.userData
+    const isEdit = (props.type === 'edit' || props.type === 'view') && props.userData
     const row = props.userData
+
+    // 提取角色ID列表
+    let roleIds: number[] = []
+    if (isEdit && row && row.roles) {
+      // 假设 row.roles 是对象数组，Role对象主键为 roleId
+      roleIds = row.roles.map((r: any) => r.roleId)
+    }
+
+    // 提取部门ID
+    let departmentId = undefined
+    if (isEdit && row && row.department) {
+       departmentId = row.department.id
+    }
 
     Object.assign(formData, {
       id: isEdit && row ? row.id : undefined,
       nickName: isEdit && row ? row.nickName || '' : '',
       userGender: isEdit && row ? row.userGender || '男' : '男',
       employeeId: isEdit && row ? row.employeeId || '' : '',
+      idCard: isEdit && row ? (row as any).idCard || '' : '',
+      // salary: isEdit && row ? (row as any).salary || '' : '', // Removed
+      departmentId: departmentId,
+      roleIds: roleIds,
       status: isEdit && row ? row.status || '1' : '1',
       hireDate: isEdit && row && row.hireDate ? row.hireDate : '',
       leaveDate: isEdit && row && row.leaveDate ? row.leaveDate : '',
@@ -172,6 +262,7 @@
     () => [props.visible, props.type, props.userData],
     ([visible]) => {
       if (visible) {
+        loadBasicData()
         initFormData()
         nextTick(() => {
           formRef.value?.clearValidate()
@@ -190,11 +281,25 @@
     await formRef.value.validate(async (valid) => {
       if (valid) {
         try {
+          // 构造提交数据，后端需要 Role 对象列表和 Department 对象
+          const submitData: any = { ...formData }
+          
+          // 处理部门
+          if (formData.departmentId) {
+             submitData.department = { id: formData.departmentId }
+          }
+          
+          // 处理角色
+          if (formData.roleIds && formData.roleIds.length > 0) {
+             // 关键修复：后端Role实体主键为roleId，必须使用roleId而不是id
+             submitData.roles = formData.roleIds.map(id => ({ roleId: id }))
+          }
+
           if (dialogType.value === 'add') {
-            await createUser(formData)
+            await createUser(submitData)
             ElMessage.success('添加成功')
           } else {
-            await updateUser(formData)
+            await updateUser(submitData)
             ElMessage.success('更新成功')
           }
           dialogVisible.value = false

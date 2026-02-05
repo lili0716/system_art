@@ -1,6 +1,30 @@
 <template>
   <template v-for="(item, index) in filteredMenuItems" :key="getUniqueKey(item, index)">
-    <ElSubMenu v-if="hasChildren(item)" :index="item.path || item.meta.title" :level="level">
+    <!-- Case 1: Promoted Single Child -->
+    <template v-if="getPromotedChild(item)">
+      <ElMenuItem
+        :index="isExternalLink(getPromotedChild(item)!) ? undefined : getPromotedChild(item)!.path || getPromotedChild(item)!.meta.title"
+        :level-item="level + 1"
+        @click="goPage(getPromotedChild(item)!)"
+      >
+        <div class="menu-icon flex-cc">
+          <ArtSvgIcon
+            :icon="getPromotedChild(item)!.meta.icon || item.meta.icon"
+            :color="theme?.iconColor"
+            :style="{ color: theme.iconColor }"
+          />
+        </div>
+        <template #title>
+          <span class="menu-name">
+            {{ formatMenuTitle(getPromotedChild(item)!.meta.title) }}
+          </span>
+          <div v-if="getPromotedChild(item)!.meta.showBadge" class="art-badge" />
+        </template>
+      </ElMenuItem>
+    </template>
+
+    <!-- Case 2: Submenu -->
+    <ElSubMenu v-else-if="hasChildren(item)" :index="item.path || item.meta.title" :level="level">
       <template #title>
         <div class="menu-icon flex-cc">
           <ArtSvgIcon
@@ -24,6 +48,7 @@
       />
     </ElSubMenu>
 
+    <!-- Case 3: Leaf Item -->
     <ElMenuItem
       v-else
       :index="isExternalLink(item) ? undefined : item.path || item.meta.title"
@@ -176,6 +201,29 @@
   }
 
   /**
+   * 获取需要提升展示的唯一子菜单
+   * 用于将只有一个子菜单的父级菜单扁平化展示
+   */
+  const getPromotedChild = (item: AppRouteRecord): AppRouteRecord | null => {
+    // 如果设置了 alwaysShow，不进行提升
+    if (item.meta?.alwaysShow) {
+      return null
+    }
+
+    const showingChildren = item.children?.filter((child) => !child.meta?.isHide) ?? []
+
+    // 只有一个可见子菜单，且该子菜单没有子菜单（叶子节点），则提升该子菜单
+    if (showingChildren.length === 1) {
+      const child = showingChildren[0]
+      if (!child.children || child.children.length === 0) {
+        return child
+      }
+    }
+
+    return null
+  }
+
+  /**
    * 生成唯一的 key
    * 使用 path、title 和 index 组合确保唯一性
    * @param item 菜单项数据
@@ -183,6 +231,10 @@
    * @returns 唯一的 key
    */
   const getUniqueKey = (item: AppRouteRecord, index: number): string => {
+    const promoted = getPromotedChild(item)
+    if (promoted) {
+      return `${promoted.path || promoted.meta.title || 'menu'}-${props.level}-${index}`
+    }
     return `${item.path || item.meta.title || 'menu'}-${props.level}-${index}`
   }
 </script>

@@ -25,6 +25,14 @@ export function updateUser(data: any) {
   })
 }
 
+// 更新用户薪资
+export function updateUserSalary(data: { id: number; salary: string }) {
+  return request.put({
+    url: '/api/users/salary',
+    data
+  })
+}
+
 // 删除用户
 export function deleteUserById(id: number) {
   return request.del({
@@ -169,6 +177,19 @@ export function deleteDepartment(id: number) {
   })
 }
 
+export function getDepartmentRoutes(id: number) {
+  return request.get<number[]>({
+    url: `/api/departments/${id}/routes`
+  })
+}
+
+export function updateDepartmentRoutes(id: number, routeIds: number[]) {
+  return request.put({
+    url: `/api/departments/${id}/routes`,
+    data: routeIds
+  })
+}
+
 // 考勤文件上传和异常记录管理
 export function uploadAttendanceFile(file: File, uploaderId: number) {
   const formData = new FormData()
@@ -229,5 +250,19 @@ export function searchEmployees(keyword: string) {
   return request.get({
     url: '/api/attendance/users/search',
     params: { keyword }
+  })
+}
+
+// 获取角色选项列表
+export function getRoleOptions() {
+  return request.get({
+    url: '/api/options/roles'
+  })
+}
+
+// 获取部门选项列表
+export function getDepartmentOptions() {
+  return request.get({
+    url: '/api/options/departments'
   })
 }

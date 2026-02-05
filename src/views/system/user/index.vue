@@ -9,7 +9,7 @@
       <ArtTableHeader v-model:columns="columnChecks" :loading="loading" @refresh="refreshData">
         <template #left>
           <ElSpace wrap>
-            <ElButton @click="showDialog('add')" v-ripple>新增用户</ElButton>
+            <ElButton @click="showDialog('add')" v-ripple>新员工入职</ElButton>
           </ElSpace>
         </template>
       </ArtTableHeader>
@@ -171,10 +171,15 @@
           prop: 'operation',
           label: '操作',
           align: 'center',
-          width: 120, // 操作列保留宽度防止折行
+          width: 180, // 操作列保留宽度防止折行
           fixed: 'right',
           formatter: (row) =>
             h('div', [
+              h(ArtButtonTable, {
+                type: 'view', // Changed valid type to 'view' if supported, or customized
+                text: '查看', // Using text since 'view' might not be a preset icon type or handled differently
+                onClick: () => showDialog('view', row)
+              }),
               h(ArtButtonTable, {
                 type: 'edit',
                 onClick: () => showDialog('edit', row)

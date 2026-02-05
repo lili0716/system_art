@@ -189,6 +189,8 @@ const props = defineProps({
   }
 })
 
+const userStore = useUserStore()
+
 const emit = defineEmits(['update:modelValue', 'save'])
 
 const formRef = ref<FormInstance>()
@@ -242,23 +244,99 @@ watch(() => props.modelValue, (val) => {
 // Auto calculate leave days
 watch([() => formData.startTime, () => formData.endTime], ([start, end]) => {
     if (formData.type === 4 && start && end) {
-        const startDate = new Date(start)
-        const endDate = new Date(end)
-        const diff = endDate.getTime() - startDate.getTime()
-        if (diff > 0) {
-            // Calculate days (approximate usually 8 hours work day, but simple diff here)
-            // User asked for day auto calc. Typically 1 day = 24h or 8h?
-            // Assuming simple 24h based calc for now unless specific business rule exists.
-            // Or usually: (diff hours) / 8?
-            // Let's stick to standard 1 day = 24 hours for generic logic, or better:
-            // Just diff / (1000 * 3600 * 24).
-            const days = diff / (1000 * 3600 * 24)
-            formData.leaveDays = parseFloat(days.toFixed(1))
-        } else {
-            formData.leaveDays = 0
-        }
+        formData.leaveDays = calculateLeaveDuration(start, end)
     }
 })
+
+/**
+ * Calculate leave duration in days
+ * Rules: 
+ * - Standard working hours: Dynamic from user rule or default 09:00 - 18:00
+ * - Lunch break: Fixed 12:00 - 13:00 (since not in rule entity)
+ * - Effective working hours per day: 8 hours
+ */
+const calculateLeaveDuration = (startTimeStr: string, endTimeStr: string): number => {
+    const startDate = new Date(startTimeStr)
+    const endDate = new Date(endTimeStr)
+
+    if (startDate >= endDate) return 0
+
+    // Default values
+    let workStartHour = 9
+    let workStartMinute = 0
+    let workEndHour = 18
+    let workEndMinute = 0
+    
+    // Lunch is hardcoded as it is not in AttendanceRule entity
+    const LUNCH_START_HOUR = 12
+    const LUNCH_END_HOUR = 13
+
+    // Try get from user store
+    if (userStore.info && userStore.info.attendanceRule) {
+        const rule = userStore.info.attendanceRule
+        if (rule.workInTime) {
+            const [h, m] = rule.workInTime.split(':').map(Number)
+            workStartHour = h
+            workStartMinute = m
+        }
+        if (rule.workOutTime) {
+            const [h, m] = rule.workOutTime.split(':').map(Number)
+            workEndHour = h
+            workEndMinute = m
+        }
+    }
+    
+    let totalMilliseconds = 0
+    
+    // Copy start date to iterate
+    let current = new Date(startDate)
+    current.setHours(0, 0, 0, 0)
+    
+    const endDay = new Date(endDate)
+    endDay.setHours(0, 0, 0, 0)
+
+    while (current <= endDay) {
+        // Define working range for current day
+        const workStart = new Date(current)
+        workStart.setHours(workStartHour, workStartMinute, 0, 0)
+        
+        const workEnd = new Date(current)
+        workEnd.setHours(workEndHour, workEndMinute, 0, 0)
+        
+        const lunchStart = new Date(current)
+        lunchStart.setHours(LUNCH_START_HOUR, 0, 0, 0)
+        
+        const lunchEnd = new Date(current)
+        lunchEnd.setHours(LUNCH_END_HOUR, 0, 0, 0)
+
+        // Determine actual span on this day
+        const actualStart = new Date(Math.max(workStart.getTime(), startDate.getTime()))
+        const actualEnd = new Date(Math.min(workEnd.getTime(), endDate.getTime()))
+        
+        if (actualStart < actualEnd) {
+            let duration = actualEnd.getTime() - actualStart.getTime()
+            
+            // Subtract lunch overlap
+            const lunchOverlapStart = new Date(Math.max(actualStart.getTime(), lunchStart.getTime()))
+            const lunchOverlapEnd = new Date(Math.min(actualEnd.getTime(), lunchEnd.getTime()))
+            
+            if (lunchOverlapStart < lunchOverlapEnd) {
+                duration -= (lunchOverlapEnd.getTime() - lunchOverlapStart.getTime())
+            }
+            
+            totalMilliseconds += duration
+        }
+        
+        // Move to next day
+        current.setDate(current.getDate() + 1)
+    }
+
+    // Convert to days (1 day = 8 hours)
+    const hours = totalMilliseconds / (1000 * 60 * 60)
+    const days = hours / 8
+    
+    return parseFloat(days.toFixed(1))
+}
 
 const dialogTitle = computed(() => {
     if (props.readonly) return '申请详情'

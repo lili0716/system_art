@@ -38,6 +38,7 @@
           <template #default="{ row }">
             <el-button link type="primary" size="small" @click="handleEdit(row)">编辑</el-button>
             <el-button link type="primary" size="small" @click="handleCreate(row)">新增下级</el-button>
+            <el-button link type="warning" size="small" @click="handlePermission(row)">菜单权限</el-button>
             <el-button link type="danger" size="small" @click="handleDelete(row)">删除</el-button>
           </template>
         </el-table-column>
@@ -108,19 +109,99 @@
         </span>
       </template>
     </el-dialog>
+
+    <!-- Permission Dialog -->
+    <el-dialog
+      v-model="permDialogVisible"
+      title="菜单权限配置"
+      width="500px"
+    >
+      <el-tree
+        ref="permTreeRef"
+        :data="menuTreeData"
+        show-checkbox
+        node-key="id"
+        :props="{ label: 'title', children: 'children' }"
+        :default-checked-keys="checkedKeys"
+      >
+        <template #default="{ node, data }">
+            <span>{{ data.meta ? data.meta.title : data.name }}</span>
+        </template>
+      </el-tree>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="permDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="handleSavePermission">保存</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed } from 'vue'
 import { Plus } from '@element-plus/icons-vue'
-import { getDepartmentTree, createDepartment, updateDepartment, deleteDepartment, searchUsers } from '@/api/system-manage'
-import { ElMessage, ElMessageBox, FormInstance, FormRules } from 'element-plus'
+import { getDepartmentTree, createDepartment, updateDepartment, deleteDepartment, searchUsers, fetchGetMenuList, getDepartmentRoutes, updateDepartmentRoutes } from '@/api/system-manage'
+import { ElMessage, ElMessageBox, FormInstance, FormRules, ElTree } from 'element-plus'
 
 const loading = ref(false)
 const deptTree = ref([])
 const dialogVisible = ref(false)
 const formRef = ref<FormInstance>()
+
+// Permission Logic
+const permDialogVisible = ref(false)
+const menuTreeData = ref([])
+const checkedKeys = ref<number[]>([])
+const currentDeptId = ref<number | null>(null)
+const permTreeRef = ref<InstanceType<typeof ElTree>>()
+
+const handlePermission = async (row: any) => {
+    currentDeptId.value = row.id
+    permDialogVisible.value = true
+    checkedKeys.value = []
+    
+    // 1. Fetch all menu data
+    try {
+        const res: any = await fetchGetMenuList()
+        menuTreeData.value = res // Routes with ID
+        
+        // 2. Fetch current dept routes
+        const routeIds: number[] = await getDepartmentRoutes(row.id)
+        checkedKeys.value = routeIds
+        
+        // Need to set checked keys after tree render or use nextTick, but default-checked-keys handles init? 
+        // If dialog opens and data changes, might need setCheckedKeys
+        setTimeout(() => {
+             permTreeRef.value?.setCheckedKeys(routeIds)
+        }, 100)
+    } catch (e) {
+        console.error(e)
+    }
+}
+
+const handleSavePermission = async () => {
+    if (!currentDeptId.value) return
+    const checked = permTreeRef.value?.getCheckedKeys(false) // false means leaf only? No, default is false (all checked)
+    const halfChecked = permTreeRef.value?.getHalfCheckedKeys()
+    // Usually backend needs full list including parents if we want to reconstruct?
+    // But my backend implementation simply saves what I send.
+    // If I select a leaf, does backend need parent?
+    // My Dynamic Router logic in backend converts list to tree structure for API response, 
+    // IF the list is flat. If I send leaf IDs, and backend saves them.
+    // When backend returns "getRoutes", it constructs response.
+    // If I have logic that assumes parent IS present in the list, I should send parents too.
+    // Standard approach: Send checked + halfChecked.
+    const allChecked = [...(checked || []), ...(halfChecked || [])] as number[]
+    
+    try {
+        await updateDepartmentRoutes(currentDeptId.value, allChecked)
+        ElMessage.success('权限更新成功')
+        permDialogVisible.value = false
+    } catch (e) {
+        console.error(e)
+    }
+}
 
 // Leader Search
 const leaderOptions = ref<any[]>([])
