@@ -266,3 +266,51 @@ export function getDepartmentOptions() {
     url: '/api/options/departments'
   })
 }
+// 薪酬统计
+export function getSalaryStatistics(month: string) {
+  return request.get<any[]>({
+    url: '/api/salary/statistics',
+    params: { month }
+  })
+}
+
+// 获取角色的菜单权限
+export function fetchGetRoleMenuPermissions(roleId: number | string) {
+  return request.get<string[]>({
+    url: `/api/roles/${roleId}/menu-permissions`
+  })
+}
+
+// 分配角色的菜单权限
+export function fetchAssignMenuPermissions(roleId: number | string, routeNames: string[]) {
+  return request.post({
+    url: `/api/roles/${roleId}/menu-permissions`,
+    data: routeNames
+  })
+}
+
+// ===== 运维管理 =====
+
+// 查询系统日志
+export function fetchSystemLogs(data: any) {
+  return request.post<any>({
+    url: '/api/ops/logs/query',
+    data
+  })
+}
+
+// 导出系统日志 Excel
+export function exportSystemLogs(data: any) {
+  return request.post<Blob>({
+    url: '/api/ops/logs/export',
+    data,
+    responseType: 'blob'
+  })
+}
+
+// 获取服务器状态
+export function fetchServerInfo() {
+  return request.get<any>({
+    url: '/api/ops/server-info'
+  })
+}

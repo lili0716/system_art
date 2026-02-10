@@ -4,6 +4,7 @@ import { systemRoutes } from './system'
 import { resultRoutes } from './result'
 import { exceptionRoutes } from './exception'
 import { attendanceRoutes } from './application'
+import { personnelRoutes } from './personnel'
 
 /**
  * 导出所有模块化路由
@@ -16,6 +17,7 @@ import { formRoutes } from './form'
 export const routeModules: AppRouteRecord[] = [
   dashboardRoutes,
   attendanceRoutes,
+  personnelRoutes,
   formRoutes,
   systemRoutes,
   resultRoutes,

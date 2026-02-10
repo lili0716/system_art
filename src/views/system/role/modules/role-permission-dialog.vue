@@ -43,6 +43,7 @@
 <script setup lang="ts">
   import { useMenuStore } from '@/store/modules/menu'
   import { formatMenuTitle } from '@/utils/router'
+  import { fetchGetRoleMenuPermissions, fetchAssignMenuPermissions } from '@/api/system-manage'
 
   type RoleListItem = Api.SystemManage.RoleListItem
 
@@ -141,10 +142,24 @@
    */
   watch(
     () => props.modelValue,
-    (newVal) => {
+    async (newVal) => {
       if (newVal && props.roleData) {
-        // TODO: 根据角色加载对应的权限数据
-        console.log('设置权限:', props.roleData)
+        try {
+          const res = await fetchGetRoleMenuPermissions(props.roleData.roleId)
+          if ((res as any).data || res) {
+            const data: string[] = (res as any).data || res
+
+            // 过滤出所有叶子节点的 key
+            const leafKeys = getAllLeafKeys(processedMenuList.value)
+            const keysToSet = data.filter((key) => leafKeys.includes(key))
+
+            nextTick(() => {
+              treeRef.value?.setCheckedKeys(keysToSet)
+            })
+          }
+        } catch (error) {
+          console.error('获取权限失败', error)
+        }
       }
     }
   )
@@ -160,11 +175,28 @@
   /**
    * 保存权限配置
    */
-  const savePermission = () => {
-    // TODO: 调用保存权限接口
-    ElMessage.success('权限保存成功')
-    emit('success')
-    handleClose()
+  const savePermission = async () => {
+    if (!props.roleData) return
+    const checkedKeys = treeRef.value?.getCheckedKeys(false) || [] // false: include all checked, including leaf
+    const halfCheckedKeys = treeRef.value?.getHalfCheckedKeys() || []
+    // Combine checked and half-checked if necessary?
+    // Usually backend for menu visibility only needs the Route Name.
+    // And if parent is half-checked, it means some children are checked.
+    // Backend assigns role to RouteMeta.
+    // If I assign Role to Child but NOT Parent, can user navigate?
+    // Usually user needs Parent permission to see Parent in menu.
+    // So we should probably include halfCheckedKeys (Parents).
+
+    const allKeys = [...checkedKeys, ...halfCheckedKeys]
+
+    try {
+      await fetchAssignMenuPermissions(props.roleData.roleId, allKeys)
+      ElMessage.success('权限保存成功')
+      emit('success')
+      handleClose()
+    } catch (error) {
+      console.error('保存权限失败', error)
+    }
   }
 
   /**
@@ -211,6 +243,24 @@
       nodeList.forEach((node) => {
         if (node.name) keys.push(node.name)
         if (node.children?.length) traverse(node.children)
+      })
+    }
+    traverse(nodes)
+    return keys
+  }
+
+  /**
+   * 获取所有叶子节点的 key
+   */
+  const getAllLeafKeys = (nodes: MenuNode[]): string[] => {
+    const keys: string[] = []
+    const traverse = (nodeList: MenuNode[]) => {
+      nodeList.forEach((node) => {
+        if (!node.children || node.children.length === 0) {
+          if (node.name) keys.push(node.name)
+        } else {
+          traverse(node.children)
+        }
       })
     }
     traverse(nodes)

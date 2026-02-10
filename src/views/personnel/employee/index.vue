@@ -1,4 +1,4 @@
-<!-- 用户管理页面 -->
+<!-- 员工管理页面 -->
 <template>
   <div class="user-page art-full-height">
     <!-- 搜索栏 -->
@@ -9,7 +9,7 @@
       <ArtTableHeader v-model:columns="columnChecks" :loading="loading" @refresh="refreshData">
         <template #left>
           <ElSpace wrap>
-            <ElButton @click="showDialog('add')" v-ripple>新增用户</ElButton>
+            <ElButton @click="showDialog('add')" v-ripple>新员工入职</ElButton>
           </ElSpace>
         </template>
       </ArtTableHeader>
@@ -26,8 +26,8 @@
       >
       </ArtTable>
 
-      <!-- 用户弹窗 -->
-      <UserDialog
+      <!-- 员工弹窗 -->
+      <EmployeeDialog
         v-model:visible="dialogVisible"
         :type="dialogType"
         :user-data="currentUserData"
@@ -41,12 +41,12 @@
   import ArtButtonTable from '@/components/core/forms/art-button-table/index.vue'
   import { useTable } from '@/hooks/core/useTable'
   import { fetchGetUserList, deleteUserById } from '@/api/system-manage'
-  import UserSearch from './modules/user-search.vue'
-  import UserDialog from './modules/user-dialog.vue'
+  import UserSearch from '@/views/system/user/modules/user-search.vue' // Reusing UserSearch
+  import EmployeeDialog from './modules/employee-dialog.vue' // Using new EmployeeDialog
   import { ElTag, ElMessageBox } from 'element-plus'
   import { DialogType } from '@/types'
 
-  defineOptions({ name: 'User' })
+  defineOptions({ name: 'Employee' })
 
   type UserListItem = Api.SystemManage.UserListItem
 
@@ -176,8 +176,8 @@
           formatter: (row) =>
             h('div', [
               h(ArtButtonTable, {
-                type: 'view', // Changed valid type to 'view' if supported, or customized
-                text: '查看', // Using text since 'view' might not be a preset icon type or handled differently
+                type: 'view',
+                text: '查看',
                 onClick: () => showDialog('view', row)
               }),
               h(ArtButtonTable, {

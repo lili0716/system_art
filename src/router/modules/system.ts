@@ -65,6 +65,17 @@ export const systemRoutes: AppRouteRecord = {
           { title: '删除', authMark: 'delete' }
         ]
       }
+    },
+    {
+      path: 'salary-statistics',
+      name: 'SalaryStatistics',
+      component: '/system/salary-statistics',
+      meta: {
+        title: '薪酬统计',
+        icon: 'ri:bar-chart-box-line',
+        keepAlive: true,
+        roles: ['R_SUPER', 'R_ADMIN']
+      }
     }
   ]
 }
