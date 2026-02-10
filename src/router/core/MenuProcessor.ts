@@ -58,7 +58,21 @@ export class MenuProcessor {
    */
   private async processBackendMenu(): Promise<AppRouteRecord[]> {
     const list = await fetchGetMenuList()
-    return this.filterEmptyMenus(list)
+    console.log('[DEBUG] Raw menu from API:', JSON.stringify(list, null, 2))
+    const filtered = this.filterEmptyMenus(list)
+    console.log(
+      '[DEBUG] After filterEmptyMenus:',
+      JSON.stringify(
+        filtered.map((r) => ({
+          name: r.name,
+          path: r.path,
+          children: r.children?.map((c) => ({ name: c.name, path: c.path }))
+        })),
+        null,
+        2
+      )
+    )
+    return filtered
   }
 
   /**

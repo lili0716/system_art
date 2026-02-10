@@ -62,6 +62,26 @@ export function fetchGetMenuList() {
   })
 }
 
+export function createMenu(data: any) {
+  return request.post({
+    url: '/api/routes',
+    data
+  })
+}
+
+export function updateMenu(id: number, data: any) {
+  return request.put({
+    url: `/api/routes/${id}`,
+    data
+  })
+}
+
+export function deleteMenu(id: number) {
+  return request.del({
+    url: `/api/routes/${id}`
+  })
+}
+
 // 考勤规则管理
 export function getAttendanceRules() {
   return request.get({
@@ -312,5 +332,40 @@ export function exportSystemLogs(data: any) {
 export function fetchServerInfo() {
   return request.get<any>({
     url: '/api/ops/server-info'
+  })
+}
+
+// ===== 岗位管理 =====
+
+export function fetchPositionList(params: any) {
+  return request.get<any>({
+    url: '/api/position/list',
+    params
+  })
+}
+
+export function fetchPositionAll() {
+  return request.get<any[]>({
+    url: '/api/position/all'
+  })
+}
+
+export function createPosition(data: any) {
+  return request.post({
+    url: '/api/position/add',
+    data
+  })
+}
+
+export function updatePosition(data: any) {
+  return request.put({
+    url: '/api/position/update',
+    data
+  })
+}
+
+export function deletePosition(id: number) {
+  return request.del({
+    url: `/api/position/delete/${id}`
   })
 }

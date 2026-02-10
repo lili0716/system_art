@@ -4,7 +4,7 @@
     <!-- 刷新按钮 -->
     <div class="page-header">
       <span class="last-update" v-if="lastUpdate">最后更新: {{ lastUpdate }}</span>
-      <ElButton type="primary" :loading="loading" @click="fetchData" v-ripple>
+      <ElButton type="primary" :loading="loading" @click="handleRefresh" v-ripple>
         <i class="ri-refresh-line" style="margin-right: 4px"></i>刷新
       </ElButton>
     </div>
@@ -240,8 +240,14 @@
     return '#67c23a'
   }
 
-  const fetchData = async () => {
-    loading.value = true
+  const handleRefresh = () => {
+    fetchData(false)
+  }
+
+  const fetchData = async (silent = false) => {
+    if (!silent) {
+      loading.value = true
+    }
     try {
       const res = await fetchServerInfo()
       serverData.value = res.data || res || {}
@@ -250,14 +256,16 @@
     } catch (e) {
       console.error('获取服务器信息失败:', e)
     } finally {
-      loading.value = false
+      if (!silent) {
+        loading.value = false
+      }
     }
   }
 
   onMounted(() => {
     fetchData()
-    // 每 10 秒自动刷新
-    timer = setInterval(fetchData, 10000)
+    // 每 5 秒自动刷新
+    timer = setInterval(() => fetchData(true), 5000)
   })
 
   onUnmounted(() => {

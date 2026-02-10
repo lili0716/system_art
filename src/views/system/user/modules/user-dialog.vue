@@ -1,12 +1,18 @@
 <template>
   <ElDialog
     v-model="dialogVisible"
-    :title="dialogType === 'add' ? '新员工入职' : (dialogType === 'view' ? '查看详情' : '编辑用户')"
+    :title="dialogType === 'add' ? '新员工入职' : dialogType === 'view' ? '查看详情' : '编辑用户'"
     width="600px"
     align-center
     @close="handleClose"
   >
-    <ElForm ref="formRef" :model="formData" :rules="rules" label-width="100px" :disabled="dialogType === 'view'">
+    <ElForm
+      ref="formRef"
+      :model="formData"
+      :rules="rules"
+      label-width="100px"
+      :disabled="dialogType === 'view'"
+    >
       <!-- 姓名 -->
       <ElFormItem label="姓名" prop="nickName">
         <ElInput v-model="formData.nickName" placeholder="请输入姓名" />
@@ -30,7 +36,6 @@
         <ElInput v-model="formData.idCard" placeholder="请输入身份证号" />
       </ElFormItem>
 
-
       <!-- 部门 -->
       <ElFormItem label="工作部门" prop="departmentId">
         <ElTreeSelect
@@ -43,14 +48,27 @@
         />
       </ElFormItem>
 
+      <!-- 岗位 -->
+      <ElFormItem label="岗位" prop="positionId">
+        <ElSelect
+          v-model="formData.positionId"
+          placeholder="请选择岗位"
+          style="width: 100%"
+          filterable
+          clearable
+        >
+          <ElOption
+            v-for="item in positionList"
+            :key="item.id"
+            :label="item.name"
+            :value="item.id"
+          />
+        </ElSelect>
+      </ElFormItem>
+
       <!-- 角色 -->
       <ElFormItem label="角色" prop="roleIds">
-        <ElSelect
-          v-model="formData.roleIds"
-          multiple
-          placeholder="请选择角色"
-          style="width: 100%"
-        >
+        <ElSelect v-model="formData.roleIds" multiple placeholder="请选择角色" style="width: 100%">
           <ElOption
             v-for="role in roleList"
             :key="role.roleId"
@@ -104,7 +122,9 @@
 
     <template #footer>
       <div class="dialog-footer">
-        <ElButton @click="dialogVisible = false">{{ dialogType === 'view' ? '关闭' : '取消' }}</ElButton>
+        <ElButton @click="dialogVisible = false">{{
+          dialogType === 'view' ? '关闭' : '取消'
+        }}</ElButton>
         <ElButton v-if="dialogType !== 'view'" type="primary" @click="handleSubmit">提交</ElButton>
       </div>
     </template>
@@ -117,7 +137,8 @@
     createUser,
     updateUser,
     getDepartmentOptions,
-    getRoleOptions
+    getRoleOptions,
+    fetchPositionAll
   } from '@/api/system-manage'
 
   interface Props {
@@ -125,7 +146,6 @@
     type: string // Using string to allow 'view' without strict type check issues if DialogType import is tricky here
     userData?: Partial<Api.SystemManage.UserListItem>
   }
-
 
   interface Emits {
     (e: 'update:visible', value: boolean): void
@@ -149,6 +169,7 @@
   // 数据源
   const departmentTree = ref<any[]>([])
   const roleList = ref<Api.SystemManage.RoleListItem[]>([])
+  const positionList = ref<any[]>([])
 
   // 表单数据
   const formData = reactive({
@@ -159,6 +180,7 @@
     idCard: '',
     // salary: '',
     departmentId: undefined as number | undefined,
+    positionId: undefined as number | undefined,
     roleIds: [] as number[],
     status: '1',
     hireDate: '',
@@ -201,11 +223,16 @@
       if (deptRes) {
         departmentTree.value = deptRes.nodes || []
       }
-      
+
       const roleRes = (await getRoleOptions()) as any
       if (roleRes) {
         // request utility returns the data payload directly (List<Role>)
         roleList.value = roleRes || []
+      }
+
+      const posRes = (await fetchPositionAll()) as any
+      if (posRes) {
+        positionList.value = posRes || []
       }
     } catch (error) {
       console.error('加载基础数据失败:', error)
@@ -229,7 +256,7 @@
     // 提取部门ID
     let departmentId = undefined
     if (isEdit && row && row.department) {
-       departmentId = row.department.id
+      departmentId = row.department.id
     }
 
     Object.assign(formData, {
@@ -240,6 +267,7 @@
       idCard: isEdit && row ? (row as any).idCard || '' : '',
       // salary: isEdit && row ? (row as any).salary || '' : '', // Removed
       departmentId: departmentId,
+      positionId: isEdit && row && (row as any).position ? (row as any).position.id : undefined,
       roleIds: roleIds,
       status: isEdit && row ? row.status || '1' : '1',
       hireDate: isEdit && row && row.hireDate ? row.hireDate : '',
@@ -283,16 +311,21 @@
         try {
           // 构造提交数据，后端需要 Role 对象列表和 Department 对象
           const submitData: any = { ...formData }
-          
+
           // 处理部门
           if (formData.departmentId) {
-             submitData.department = { id: formData.departmentId }
+            submitData.department = { id: formData.departmentId }
           }
-          
+
           // 处理角色
           if (formData.roleIds && formData.roleIds.length > 0) {
-             // 关键修复：后端Role实体主键为roleId，必须使用roleId而不是id
-             submitData.roles = formData.roleIds.map(id => ({ roleId: id }))
+            // 关键修复：后端Role实体主键为roleId，必须使用roleId而不是id
+            submitData.roles = formData.roleIds.map((id) => ({ roleId: id }))
+          }
+
+          // 处理岗位
+          if (formData.positionId) {
+            submitData.position = { id: formData.positionId }
           }
 
           if (dialogType.value === 'add') {

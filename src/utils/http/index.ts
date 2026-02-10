@@ -83,6 +83,11 @@ axiosInstance.interceptors.request.use(
 /** 响应拦截器 */
 axiosInstance.interceptors.response.use(
   (response: AxiosResponse<BaseResponse>) => {
+    // 如果是下载文件，直接返回
+    if (['blob', 'arraybuffer'].includes(response.config.responseType as string)) {
+      return response
+    }
+
     const { code, msg } = response.data
     if (code === ApiStatus.success) return response
     if (code === ApiStatus.unauthorized) handleUnauthorizedError(msg)
@@ -176,6 +181,11 @@ async function request<T = any>(config: ExtendedAxiosRequestConfig): Promise<T> 
 
   try {
     const res = await axiosInstance.request<BaseResponse<T>>(config)
+
+    // 二进制数据直接返回
+    if (['blob', 'arraybuffer'].includes(config.responseType as string)) {
+      return res.data as unknown as T
+    }
 
     // 显示成功消息
     if (config.showSuccessMessage && res.data.msg) {

@@ -129,6 +129,12 @@
         { prop: 'email', label: '邮箱', align: 'center' },
         { prop: 'employeeId', label: '工号', align: 'center' },
         {
+          prop: 'position',
+          label: '职位',
+          align: 'center',
+          formatter: (row) => (row as any).position?.name || '-'
+        },
+        {
           prop: 'status',
           label: '在职状态',
           align: 'center',

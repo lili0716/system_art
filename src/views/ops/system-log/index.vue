@@ -1,130 +1,26 @@
-<!-- 系统日志页面 -->
 <template>
-  <div class="system-log-page">
-    <!-- 搜索栏 -->
-    <ElCard class="search-card" shadow="never">
-      <ElForm :model="searchForm" inline>
-        <ElFormItem label="时间范围">
-          <ElDatePicker
-            v-model="dateRange"
-            type="datetimerange"
-            range-separator="至"
-            start-placeholder="开始时间"
-            end-placeholder="结束时间"
-            value-format="YYYY-MM-DD HH:mm:ss"
-            :shortcuts="dateShortcuts"
-            style="width: 360px"
-          />
-        </ElFormItem>
-        <ElFormItem label="用户">
-          <ElInput
-            v-model="searchForm.nickName"
-            placeholder="用户姓名"
-            clearable
-            style="width: 140px"
-          />
-        </ElFormItem>
-        <ElFormItem label="工号">
-          <ElInput
-            v-model="searchForm.employeeId"
-            placeholder="工号"
-            clearable
-            style="width: 120px"
-          />
-        </ElFormItem>
-        <ElFormItem label="请求方法">
-          <ElSelect v-model="searchForm.method" placeholder="全部" clearable style="width: 100px">
-            <ElOption label="GET" value="GET" />
-            <ElOption label="POST" value="POST" />
-            <ElOption label="PUT" value="PUT" />
-            <ElOption label="DELETE" value="DELETE" />
-          </ElSelect>
-        </ElFormItem>
-        <ElFormItem label="URI">
-          <ElInput v-model="searchForm.uri" placeholder="请求路径" clearable style="width: 180px" />
-        </ElFormItem>
-        <ElFormItem>
-          <ElButton type="primary" @click="handleSearch" v-ripple>
-            <i class="ri-search-line" style="margin-right: 4px"></i>查询
-          </ElButton>
-          <ElButton @click="handleReset" v-ripple>
-            <i class="ri-refresh-line" style="margin-right: 4px"></i>重置
-          </ElButton>
-          <ElButton type="success" @click="handleExport" :loading="exporting" v-ripple>
+  <div class="system-log-page art-full-height">
+    <ArtSearchBar :items="searchItems" @search="handleSearch" @reset="handleReset" />
+
+    <ElCard class="art-table-card" shadow="never">
+      <ArtTableHeader v-model:columns="columnChecks" :loading="loading" @refresh="refreshData">
+        <template #left>
+          <ElButton type="default" @click="handleExport" :loading="exporting" v-ripple>
             <i class="ri-file-excel-2-line" style="margin-right: 4px"></i>导出Excel
           </ElButton>
-        </ElFormItem>
-      </ElForm>
-    </ElCard>
+        </template>
+      </ArtTableHeader>
 
-    <!-- 表格 -->
-    <ElCard class="table-card" shadow="never">
-      <ElTable
-        :data="tableData"
-        v-loading="loading"
-        stripe
-        border
-        style="width: 100%"
-        :header-cell-style="{ background: '#f5f7fa', fontWeight: '600' }"
-        row-key="id"
-      >
-        <ElTableColumn type="index" label="序号" width="60" align="center" />
-        <ElTableColumn prop="requestTime" label="请求时间" width="170" align="center">
-          <template #default="{ row }">
-            {{ formatTime(row.requestTime) }}
-          </template>
-        </ElTableColumn>
-        <ElTableColumn prop="employeeId" label="工号" width="90" align="center" />
-        <ElTableColumn prop="nickName" label="用户" width="90" align="center">
-          <template #default="{ row }">
-            <span>{{ row.nickName || '-' }}</span>
-          </template>
-        </ElTableColumn>
-        <ElTableColumn prop="method" label="方法" width="80" align="center">
-          <template #default="{ row }">
-            <ElTag :type="getMethodTagType(row.method)" size="small" effect="dark">
-              {{ row.method }}
-            </ElTag>
-          </template>
-        </ElTableColumn>
-        <ElTableColumn prop="uri" label="请求URI" min-width="220" show-overflow-tooltip />
-        <ElTableColumn prop="requestParams" label="请求参数" min-width="200" show-overflow-tooltip>
-          <template #default="{ row }">
-            <span class="params-text">{{ row.requestParams || '-' }}</span>
-          </template>
-        </ElTableColumn>
-        <ElTableColumn prop="responseCode" label="状态码" width="80" align="center">
-          <template #default="{ row }">
-            <ElTag :type="row.responseCode === 200 ? 'success' : 'danger'" size="small">
-              {{ row.responseCode }}
-            </ElTag>
-          </template>
-        </ElTableColumn>
-        <ElTableColumn prop="duration" label="耗时" width="90" align="center">
-          <template #default="{ row }">
-            <span :class="{ 'slow-request': row.duration > 1000 }">{{ row.duration }}ms</span>
-          </template>
-        </ElTableColumn>
-        <ElTableColumn prop="ip" label="IP地址" width="130" align="center" />
-        <ElTableColumn label="操作" width="80" align="center" fixed="right">
-          <template #default="{ row }">
-            <ElButton type="primary" link size="small" @click="showDetail(row)">详情</ElButton>
-          </template>
-        </ElTableColumn>
-      </ElTable>
-
-      <!-- 分页 -->
-      <div class="pagination-wrapper">
-        <ElPagination
-          v-model:current-page="pagination.current"
-          v-model:page-size="pagination.size"
-          :page-sizes="[20, 50, 100]"
-          :total="pagination.total"
-          layout="total, sizes, prev, pager, next, jumper"
-          @size-change="handleSizeChange"
-          @current-change="handleCurrentChange"
-        />
-      </div>
+      <ArtTable
+        class="auto-height"
+        :height="height"
+        :loading="loading"
+        :data="data"
+        :columns="columns"
+        :pagination="pagination"
+        @pagination:size-change="handleSizeChange"
+        @pagination:current-change="handleCurrentChange"
+      />
     </ElCard>
 
     <!-- 详情弹窗 -->
@@ -172,73 +68,87 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, reactive, onMounted } from 'vue'
-  import { ElMessage } from 'element-plus'
+  import { ref, computed } from 'vue'
+  import { ElMessage, ElTag, ElButton } from 'element-plus'
   import { fetchSystemLogs, exportSystemLogs } from '@/api/system-manage'
+  import { useTable } from '@/hooks/core/useTable'
+  import ArtButtonTable from '@/components/core/forms/art-button-table/index.vue'
 
   defineOptions({ name: 'SystemLog' })
 
-  const loading = ref(false)
   const exporting = ref(false)
-  const tableData = ref<any[]>([])
-  const dateRange = ref<[string, string] | null>(null)
-
-  const searchForm = reactive({
-    nickName: '',
-    employeeId: '',
-    method: '',
-    uri: ''
-  })
-
-  const pagination = reactive({
-    current: 1,
-    size: 20,
-    total: 0
-  })
-
   const detailVisible = ref(false)
   const detailData = ref<any>({})
 
-  // 时间快捷选项
-  const dateShortcuts = [
+  // 搜索项配置
+  const searchItems = computed(() => [
     {
-      text: '最近1小时',
-      value: () => {
-        const end = new Date()
-        const start = new Date()
-        start.setTime(start.getTime() - 3600 * 1000)
-        return [start, end]
+      type: 'daterange',
+      key: 'dateRange',
+      label: '时间范围',
+      props: {
+        type: 'daterange', // 必须显式传递 type 给 ElDatePicker
+        valueFormat: 'YYYY-MM-DD HH:mm:ss',
+        defaultTime: [new Date(2000, 1, 1, 0, 0, 0), new Date(2000, 2, 1, 23, 59, 59)]
       }
     },
     {
-      text: '今天',
-      value: () => {
-        const end = new Date()
-        const start = new Date()
-        start.setHours(0, 0, 0, 0)
-        return [start, end]
+      type: 'input',
+      key: 'nickName',
+      label: '用户姓名',
+      props: { placeholder: '请输入用户姓名' }
+    },
+    {
+      type: 'input',
+      key: 'employeeId',
+      label: '工号',
+      props: { placeholder: '请输入工号' }
+    },
+    {
+      type: 'select',
+      key: 'method',
+      label: '请求方法',
+      props: {
+        placeholder: '全部',
+        options: [
+          // options 必须放在 props 里面
+          { label: 'GET', value: 'GET' },
+          { label: 'POST', value: 'POST' },
+          { label: 'PUT', value: 'PUT' },
+          { label: 'DELETE', value: 'DELETE' }
+        ]
       }
     },
     {
-      text: '最近7天',
-      value: () => {
-        const end = new Date()
-        const start = new Date()
-        start.setTime(start.getTime() - 7 * 24 * 3600 * 1000)
-        return [start, end]
-      }
-    },
-    {
-      text: '最近30天',
-      value: () => {
-        const end = new Date()
-        const start = new Date()
-        start.setTime(start.getTime() - 30 * 24 * 3600 * 1000)
-        return [start, end]
-      }
+      type: 'input',
+      key: 'uri',
+      label: '请求URI',
+      props: { placeholder: '请输入请求路径' }
     }
-  ]
+  ])
 
+  // 时间格式化
+  const formatTime = (time: any) => {
+    if (!time) return '-'
+    if (typeof time === 'string') return time.replace('T', ' ')
+    if (Array.isArray(time)) {
+      const [y, m, d, h, mi, s] = time
+      return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')} ${String(h).padStart(2, '0')}:${String(mi).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+    }
+    return String(time)
+  }
+
+  // JSON 格式化
+  const formatJson = (str: string) => {
+    if (!str) return ''
+    try {
+      return JSON.stringify(JSON.parse(str), null, 2)
+    } catch {
+      return str
+    }
+  }
+
+  // 方法标签颜色
   const getMethodTagType = (method: string) => {
     const map: Record<string, string> = {
       GET: 'primary',
@@ -249,90 +159,177 @@
     return map[method] || 'info'
   }
 
-  const formatTime = (time: any) => {
-    if (!time) return '-'
-    if (typeof time === 'string') return time.replace('T', ' ')
-    if (Array.isArray(time)) {
-      // Java LocalDateTime 序列化为数组 [year, month, day, hour, min, sec, nano]
-      const [y, m, d, h, mi, s] = time
-      return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')} ${String(h).padStart(2, '0')}:${String(mi).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+  // 表格 Hook
+  const {
+    columns,
+    columnChecks,
+    data,
+    loading,
+    pagination,
+    searchParams,
+    getData,
+    handleSizeChange,
+    handleCurrentChange,
+    refreshData,
+    resetSearchParams,
+    height // 解构出 height
+  } = useTable({
+    core: {
+      apiFn: fetchSystemLogs,
+      // 自定义参数处理：将 dateRange 拆分为 startTime 和 endTime
+      apiParams: {
+        current: 1,
+        size: 20
+      },
+      columnsFactory: () => [
+        {
+          prop: 'id', // Use ID as key but display custom index if needed via slot/formatter or backend id
+          label: 'ID',
+          width: 80,
+          align: 'center'
+        },
+        {
+          prop: 'requestTime',
+          label: '请求时间',
+          width: 170,
+          align: 'center',
+          formatter: (row: any) => formatTime(row.requestTime)
+        },
+        {
+          prop: 'employeeId',
+          label: '工号',
+          width: 100,
+          align: 'center'
+        },
+        {
+          prop: 'nickName',
+          label: '用户姓名',
+          width: 100,
+          align: 'center',
+          formatter: (row: any) => row.nickName || '-'
+        },
+        {
+          prop: 'method',
+          label: '方法',
+          width: 90,
+          align: 'center',
+          formatter: (row: any) => {
+            return h(
+              ElTag,
+              { type: getMethodTagType(row.method), size: 'small', effect: 'dark' },
+              () => row.method
+            )
+          }
+        },
+        {
+          prop: 'uri',
+          label: '请求URI',
+          minWidth: 200,
+          showOverflowTooltip: true
+        },
+        {
+          prop: 'requestParams',
+          label: '请求参数',
+          minWidth: 150,
+          showOverflowTooltip: true,
+          formatter: (row: any) => row.requestParams || '-'
+        },
+        {
+          prop: 'responseCode',
+          label: '状态码',
+          width: 90,
+          align: 'center',
+          formatter: (row: any) => {
+            return h(
+              ElTag,
+              { type: row.responseCode === 200 ? 'success' : 'danger', size: 'small' },
+              () => row.responseCode
+            )
+          }
+        },
+        {
+          prop: 'duration',
+          label: '耗时',
+          width: 100,
+          align: 'center',
+          formatter: (row: any) => {
+            return h(
+              'span',
+              { class: row.duration > 1000 ? 'slow-request' : '' },
+              `${row.duration}ms`
+            )
+          }
+        },
+        {
+          prop: 'ip',
+          label: 'IP地址',
+          width: 130,
+          align: 'center'
+        },
+        {
+          prop: 'operation',
+          label: '操作',
+          width: 90,
+          fixed: 'right',
+          align: 'center',
+          formatter: (row: any) => {
+            return h(ArtButtonTable, {
+              type: 'view', // Using 'view' type if available or simpler button
+              text: '详情', // Overwrite text if needed or just use default icon
+              title: '查看详情',
+              onClick: () => showDetail(row)
+            })
+          }
+        }
+      ]
+    },
+    // 启用高度自适应
+    tableHeight: {
+      enable: true
+      // 这里的 220 大概是 搜索栏高度(约60-80) + 表头栏高度(约50) + 分页栏高度(约50) + padding/margin
+      // 根据实际情况调整，通常 useTableHeight 会自动计算，但如果布局复杂可能需要 extraHeight
+      // 保持默认即可尝试
     }
-    return String(time)
-  }
+  })
 
-  const formatJson = (str: string) => {
-    if (!str) return ''
-    try {
-      return JSON.stringify(JSON.parse(str), null, 2)
-    } catch {
-      return str
-    }
-  }
+  // 搜索处理
+  const handleSearch = (params: any) => {
+    const safeParams = params || {}
+    const { dateRange, ...rest } = safeParams
+    const queryParams: any = { ...rest }
 
-  const buildQueryParams = () => {
-    const params: any = {
-      current: pagination.current,
-      size: pagination.size
+    if (dateRange && Array.isArray(dateRange) && dateRange.length === 2) {
+      queryParams.startTime = dateRange[0]
+      queryParams.endTime = dateRange[1]
+    } else {
+      queryParams.startTime = undefined
+      queryParams.endTime = undefined
     }
-    if (dateRange.value && dateRange.value.length === 2) {
-      params.startTime = dateRange.value[0]
-      params.endTime = dateRange.value[1]
-    }
-    if (searchForm.nickName) params.nickName = searchForm.nickName
-    if (searchForm.employeeId) params.employeeId = searchForm.employeeId
-    if (searchForm.method) params.method = searchForm.method
-    if (searchForm.uri) params.uri = searchForm.uri
-    return params
-  }
 
-  const fetchData = async () => {
-    loading.value = true
-    try {
-      const res = await fetchSystemLogs(buildQueryParams())
-      const data = res.data || res
-      tableData.value = data.records || []
-      pagination.total = data.total || 0
-    } catch (e) {
-      console.error('查询日志失败:', e)
-    } finally {
-      loading.value = false
-    }
-  }
-
-  const handleSearch = () => {
-    pagination.current = 1
-    fetchData()
+    // 更新 searchParams 并查询
+    Object.assign(searchParams, queryParams)
+    getData() // getData is actually getDataByPage (reset pagination)
   }
 
   const handleReset = () => {
-    searchForm.nickName = ''
-    searchForm.employeeId = ''
-    searchForm.method = ''
-    searchForm.uri = ''
-    dateRange.value = null
-    pagination.current = 1
-    fetchData()
+    resetSearchParams()
   }
 
-  const handleSizeChange = (val: number) => {
-    pagination.size = val
-    pagination.current = 1
-    fetchData()
-  }
-
-  const handleCurrentChange = (val: number) => {
-    pagination.current = val
-    fetchData()
+  const showDetail = (row: any) => {
+    detailData.value = row
+    detailVisible.value = true
   }
 
   const handleExport = async () => {
     exporting.value = true
     try {
-      const params = buildQueryParams()
+      // 构造当前所有查询参数
+      // searchParams 包含分页参数，导出时可能不需要分页或者后端忽略
+      const params = { ...searchParams }
       delete params.current
       delete params.size
+
       const res = await exportSystemLogs(params)
-      // 判断响应类型
       const blob =
         res instanceof Blob
           ? res
@@ -353,46 +350,9 @@
       exporting.value = false
     }
   }
-
-  const showDetail = (row: any) => {
-    detailData.value = row
-    detailVisible.value = true
-  }
-
-  onMounted(() => {
-    fetchData()
-  })
 </script>
 
-<style scoped>
-  .system-log-page {
-    padding: 0;
-  }
-
-  .search-card {
-    margin-bottom: 16px;
-  }
-
-  .search-card :deep(.el-form-item) {
-    margin-bottom: 8px;
-  }
-
-  .table-card {
-    /* fill remaining */
-  }
-
-  .pagination-wrapper {
-    display: flex;
-    justify-content: flex-end;
-    margin-top: 16px;
-  }
-
-  .params-text {
-    font-family: Consolas, Monaco, monospace;
-    font-size: 12px;
-    color: #666;
-  }
-
+<style scoped lang="scss">
   .slow-request {
     font-weight: bold;
     color: #e6a23c;
