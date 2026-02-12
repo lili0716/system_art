@@ -61,6 +61,7 @@
     employeeLoading.value = true
     try {
       const res: any = await searchEmployees(query)
+      console.log('员工搜索结果:', res)
       employeeOptions.value = res || []
     } catch (error) {
       console.error('搜索员工失败', error)
@@ -78,18 +79,19 @@
       key: 'employeeIds',
       type: 'select',
       props: {
-        placeholder: '输入工号或姓名搜索',
-        multiple: true,
-        filterable: true,
-        remote: true,
-        reserveKeyword: true,
-        remoteMethod: handleEmployeeSearch,
-        loading: employeeLoading.value,
-        options: employeeOptions.value,
-        clearable: true,
-        style: { width: '280px' },
-        max: 3
-      }
+              placeholder: '输入工号或姓名搜索',
+              multiple: true,
+              filterable: true,
+              remote: true,
+              reserveKeyword: true,
+              remoteMethod: handleEmployeeSearch,
+              loading: employeeLoading.value,
+              options: employeeOptions.value,
+              clearable: true,
+              style: { width: '280px' },
+              max: 3,
+              valueKey: 'value'
+            }
     },
     {
       label: '部门',

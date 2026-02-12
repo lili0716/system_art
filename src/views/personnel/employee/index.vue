@@ -10,6 +10,7 @@
         <template #left>
           <ElSpace wrap>
             <ElButton @click="showDialog('add')" v-ripple>新员工入职</ElButton>
+            <ElButton @click="showSyncDialog" type="primary" v-ripple>数据同步</ElButton>
           </ElSpace>
         </template>
       </ArtTableHeader>
@@ -33,6 +34,12 @@
         :user-data="currentUserData"
         @submit="handleDialogSubmit"
       />
+      
+      <!-- 数据同步弹窗 -->
+      <DataSyncDialog
+        v-model:visible="syncDialogVisible"
+        @submit="handleSyncSubmit"
+      />
     </ElCard>
   </div>
 </template>
@@ -43,8 +50,10 @@
   import { fetchGetUserList, deleteUserById } from '@/api/system-manage'
   import UserSearch from '@/views/system/user/modules/user-search.vue' // Reusing UserSearch
   import EmployeeDialog from './modules/employee-dialog.vue' // Using new EmployeeDialog
-  import { ElTag, ElMessageBox } from 'element-plus'
+  import DataSyncDialog from './modules/data-sync-dialog.vue' // Data sync dialog
+  import { ElTag, ElMessageBox, ElMessage } from 'element-plus'
   import { DialogType } from '@/types'
+  import { useUserStore } from '@/store/modules/user'
 
   defineOptions({ name: 'Employee' })
 
@@ -54,6 +63,9 @@
   const dialogType = ref<DialogType>('add')
   const dialogVisible = ref(false)
   const currentUserData = ref<Partial<UserListItem>>({})
+  
+  // 数据同步弹窗相关
+  const syncDialogVisible = ref(false)
 
   // 选中行
   const selectedRows = ref<UserListItem[]>([])
@@ -214,6 +226,15 @@
   }
 
   /**
+   * 显示数据同步弹窗
+   */
+  const showSyncDialog = (): void => {
+    nextTick(() => {
+      syncDialogVisible.value = true
+    })
+  }
+
+  /**
    * 删除用户
    */
   const deleteUser = (row: UserListItem): void => {
@@ -251,5 +272,46 @@
    */
   const handleSelectionChange = (selection: UserListItem[]): void => {
     selectedRows.value = selection
+  }
+
+  // 用户store
+  const userStore = useUserStore()
+
+  /**
+   * 处理数据同步提交
+   */
+  const handleSyncSubmit = async (syncData: any): Promise<void> => {
+    try {
+      console.log('开始数据同步:', syncData)
+      
+      // 获取token
+      const token = userStore.accessToken
+      console.log('Token:', token)
+      
+      // 调用后端API进行数据同步
+      const response = await fetch('/api/users/sync', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token
+        },
+        body: JSON.stringify(syncData)
+      })
+      
+      console.log('Response status:', response.status)
+      
+      const result = await response.json()
+      
+      if (result.code === 200) {
+        ElMessage.success('数据同步成功')
+        console.log('同步结果:', result.data)
+        refreshData()
+      } else {
+        ElMessage.error(`数据同步失败: ${result.msg}`)
+      }
+    } catch (error) {
+      console.error('数据同步失败:', error)
+      ElMessage.error('数据同步失败，请重试')
+    }
   }
 </script>

@@ -8,12 +8,19 @@
       </el-button>
     </div>
 
-    <!-- Tree Table -->
+    <!-- 部门列表 -->
     <el-card class="list-card">
+      <template #header>
+        <div class="flex justify-between items-center">
+          <span>部门列表</span>
+          <el-button size="small" @click="fetchTree">刷新</el-button>
+        </div>
+      </template>
       <el-table
         v-loading="loading"
         :data="deptTree"
-        style="width: 100%; height: 100%"
+        style="width: 100%"
+        :height="tableHeight"
         row-key="id"
         border
         default-expand-all
@@ -26,6 +33,7 @@
                 {{ row.leaderName || '-' }}
             </template>
         </el-table-column>
+        <el-table-column prop="employeeCount" label="人数" width="80" align="center" />
         <el-table-column prop="sort" label="排序" width="80" align="center" />
         <el-table-column label="状态" width="100" align="center">
           <template #default="{ row }">
@@ -72,25 +80,15 @@
           <el-input v-model="formData.code" placeholder="请输入部门编码" />
         </el-form-item>
          <el-form-item label="负责人">
-             <el-select
+             <ApiSelect
                 v-model="formData.leaderId"
-                filterable
-                remote
+                api-url="/api/users/search"
+                :label-field="(data) => `${data.nickName} (${data.employeeId || data.username})`"
+                value-field="id"
                 placeholder="请输入并选择负责人"
-                :remote-method="searchLeaders"
-                :loading="leaderLoading"
-                @change="handleLeaderChange"
                 style="width: 100%"
-                v-infinite-scroll="loadMoreLeaders"
-                :infinite-scroll-disabled="!leaderQuery.hasMore"
-             >
-                <el-option
-                    v-for="item in leaderOptions"
-                    :key="item.value"
-                    :label="item.label"
-                    :value="item.value"
-                />
-             </el-select>
+                :api-params="{ page: 1, size: 50 }"
+             />
         </el-form-item>
         <el-form-item label="排序" prop="sort">
           <el-input-number v-model="formData.sort" :min="0" :max="999" />
@@ -141,13 +139,17 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed } from 'vue'
 import { Plus } from '@element-plus/icons-vue'
-import { getDepartmentTree, createDepartment, updateDepartment, deleteDepartment, searchUsers, fetchGetMenuList, getDepartmentRoutes, updateDepartmentRoutes } from '@/api/system-manage'
+import { getDepartmentTree, createDepartment, updateDepartment, deleteDepartment, fetchGetMenuList, getDepartmentRoutes, updateDepartmentRoutes } from '@/api/system-manage'
+import { ApiSelect } from '@/components/core/forms/api-select'
 import { ElMessage, ElMessageBox, FormInstance, FormRules, ElTree } from 'element-plus'
 
 const loading = ref(false)
 const deptTree = ref([])
 const dialogVisible = ref(false)
 const formRef = ref<FormInstance>()
+
+// 表格高度
+const tableHeight = ref('600px')
 
 // Permission Logic
 const permDialogVisible = ref(false)
@@ -203,82 +205,11 @@ const handleSavePermission = async () => {
     }
 }
 
-// Leader Search
-const leaderOptions = ref<any[]>([])
-const leaderLoading = ref(false)
-const leaderQuery = reactive({
-    keyword: '',
-    page: 1,
-    size: 50,
-    hasMore: true
-})
 
-const searchLeaders = async (keyword: string) => {
-    leaderLoading.value = true
-    leaderQuery.keyword = keyword
-    leaderQuery.page = 1
-    leaderQuery.hasMore = true
-    leaderOptions.value = []
-    
-    try {
-        const res: any = await searchUsers({
-            keyword: leaderQuery.keyword,
-            page: leaderQuery.page,
-            size: leaderQuery.size
-        })
-        const records = res.records || []
-        leaderOptions.value = records.map((u: any) => ({
-            value: u.id, // Store ID directly
-            label: `${u.nickName} (${u.username})`, // Show Name + Account
-            ...u
-        }))
-        if (records.length < leaderQuery.size) {
-            leaderQuery.hasMore = false
-        }
-    } catch (e) {
-        console.error(e)
-    } finally {
-        leaderLoading.value = false
-    }
-}
 
-const loadMoreLeaders = async () => {
-    if (!leaderQuery.hasMore || leaderLoading.value) return
-    leaderLoading.value = true
-    leaderQuery.page++
-    try {
-         const res: any = await searchUsers({
-            keyword: leaderQuery.keyword,
-            page: leaderQuery.page,
-            size: leaderQuery.size
-        })
-        const records = res.records || []
-        const newOptions = records.map((u: any) => ({
-            value: u.id,
-            label: `${u.nickName} (${u.username})`,
-            ...u
-        }))
-        leaderOptions.value.push(...newOptions)
-        if (records.length < leaderQuery.size) {
-            leaderQuery.hasMore = false
-        }
-    } catch (e) {
-        console.error(e)
-    } finally {
-        leaderLoading.value = false
-    }
-}
 
-const handleLeaderChange = (val: any) => {
-    const selected = leaderOptions.value.find(item => item.value === val)
-    if (selected) {
-        formData.leaderId = selected.id
-        formData.leaderName = selected.nickName
-    } else {
-        formData.leaderId = undefined
-        formData.leaderName = ''
-    }
-}
+
+
 
 const formData = reactive({
   id: undefined,
@@ -323,12 +254,10 @@ const resetForm = () => {
     formData.leaderName = ''
     formData.leaderId = undefined
     formRef.value?.resetFields()
-    leaderOptions.value = []
 }
 
 const handleCreate = (row: any) => {
   resetForm()
-  searchLeaders('') // Preload first 50
   if (row) {
       formData.parentId = row.id
   }
@@ -337,21 +266,7 @@ const handleCreate = (row: any) => {
 
 const handleEdit = (row: any) => {
   resetForm()
-  searchLeaders('') // Preload first 50 - ideally user's current leader also should be there.
   Object.assign(formData, row)
-  // If row has leader info, push it to options if not present ??
-  if (row.leaderId && row.leaderName) {
-      // Just mock push it so it shows up? Or reload search with keyword?
-      // Pushing manually to ensure it displays correctly even if not in first 50
-      if (!leaderOptions.value.find(o => o.value === row.leaderId)) {
-        leaderOptions.value.unshift({
-            value: row.leaderId,
-            label: `${row.leaderName} (ID:${row.leaderId})`, // Fallback format
-            id: row.leaderId,
-            nickName: row.leaderName
-        })
-      }
-  }
   dialogVisible.value = true
 }
 
@@ -430,11 +345,9 @@ onMounted(() => {
     flex: 1;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
 
     :deep(.el-card__body) {
       flex: 1;
-      height: 100%;
       padding: 0;
     }
   }

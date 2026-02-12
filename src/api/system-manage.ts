@@ -287,10 +287,10 @@ export function getDepartmentOptions() {
   })
 }
 // 薪酬统计
-export function getSalaryStatistics(month: string) {
+export function getSalaryStatistics(month: string, employeeId?: string, departmentId?: number) {
   return request.get<any[]>({
     url: '/api/salary/statistics',
-    params: { month }
+    params: { month, employeeId, departmentId }
   })
 }
 

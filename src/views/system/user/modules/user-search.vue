@@ -3,13 +3,17 @@
     <ElForm :model="model" label-width="80px">
       <ElRow :gutter="20">
         <ElCol :span="6">
-          <ElFormItem label="姓名">
-            <ElInput v-model="model.nickName" placeholder="请输入姓名" clearable @keyup.enter="handleSearch" />
-          </ElFormItem>
-        </ElCol>
-        <ElCol :span="6">
-          <ElFormItem label="工号">
-            <ElInput v-model="model.employeeId" placeholder="请输入工号" clearable @keyup.enter="handleSearch" />
+          <ElFormItem label="员工">
+            <ApiSelect
+              v-model="model.employeeId"
+              api-url="/api/users/search"
+              :label-field="(data) => `${data.nickName} (${data.employeeId || data.username})`"
+              value-field="employeeId"
+              placeholder="输入工号或姓名搜索"
+              clearable
+              style="width: 100%"
+              :api-params="{ page: 1, size: 50 }"
+            />
           </ElFormItem>
         </ElCol>
         <ElCol :span="6">
@@ -56,7 +60,8 @@
 </template>
 
 <script setup lang="ts">
-  import { PropType } from 'vue'
+  import { PropType, computed } from 'vue'
+  import { ApiSelect } from '@/components/core/forms/api-select'
 
   const props = defineProps({
     modelValue: {

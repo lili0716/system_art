@@ -10,8 +10,31 @@
             value-format="YYYY-MM"
             placeholder="选择月份"
             style="width: 140px"
-            @change="fetchData"
           />
+        </el-form-item>
+        <el-form-item label="员工">
+          <ApiSelect
+            v-model="employeeId"
+            api-url="/api/attendance/users/search"
+            :label-field="(data) => data.label"
+            value-field="value"
+            placeholder="输入工号或姓名搜索"
+            style="width: 200px"
+          />
+        </el-form-item>
+        <el-form-item label="部门">
+          <el-select
+            v-model="departmentId"
+            placeholder="选择部门"
+            style="width: 180px"
+          >
+            <el-option
+              v-for="dept in departments"
+              :key="dept.id"
+              :label="dept.name"
+              :value="dept.id"
+            />
+          </el-select>
         </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="fetchData">
@@ -19,6 +42,9 @@
               <el-icon><Search /></el-icon>
             </template>
             查询
+          </el-button>
+          <el-button @click="resetForm">
+            重置
           </el-button>
           <el-button @click="handleExport">
             <template #icon>
@@ -82,7 +108,8 @@
 
 <script setup lang="ts">
   import { ref, onMounted } from 'vue'
-  import { getSalaryStatistics } from '@/api/system-manage'
+  import { getSalaryStatistics, getDepartmentOptions } from '@/api/system-manage'
+  import { ApiSelect } from '@/components/core/forms/api-select'
   import dayjs from 'dayjs'
   import { ElMessage } from 'element-plus'
   import { Search, Download } from '@element-plus/icons-vue'
@@ -90,14 +117,29 @@
   defineOptions({ name: 'SalaryStatistics' })
 
   const month = ref(dayjs().format('YYYY-MM'))
+  const employeeId = ref('')
+  const departmentId = ref<number | undefined>(undefined)
+  const departments = ref<any[]>([])
   const data = ref([])
   const loading = ref(false)
+
+  // 获取部门列表
+  const fetchDepartments = async () => {
+    try {
+      const res = await getDepartmentOptions()
+      if (res.data) {
+        departments.value = res.data
+      }
+    } catch (error) {
+      console.error('获取部门列表失败:', error)
+    }
+  }
 
   const fetchData = async () => {
     if (!month.value) return
     loading.value = true
     try {
-      const res = await getSalaryStatistics(month.value)
+      const res = await getSalaryStatistics(month.value, employeeId.value, departmentId.value)
       if ((res as any).data) {
         data.value = (res as any).data
       }
@@ -108,11 +150,17 @@
     }
   }
 
+  const resetForm = () => {
+    employeeId.value = ''
+    departmentId.value = undefined
+  }
+
   const handleExport = () => {
     ElMessage.info('导出功能开发中')
   }
 
   onMounted(() => {
+    fetchDepartments()
     fetchData()
   })
 </script>

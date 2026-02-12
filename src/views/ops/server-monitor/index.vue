@@ -1,12 +1,22 @@
 <!-- 服务器管理页面 -->
 <template>
   <div class="server-monitor-page">
-    <!-- 刷新按钮 -->
+    <!-- 刷新按钮和轮询控制 -->
     <div class="page-header">
       <span class="last-update" v-if="lastUpdate">最后更新: {{ lastUpdate }}</span>
-      <ElButton type="primary" :loading="loading" @click="handleRefresh" v-ripple>
-        <i class="ri-refresh-line" style="margin-right: 4px"></i>刷新
-      </ElButton>
+      <div class="header-buttons">
+        <ElButton 
+          :type="pollingEnabled ? 'warning' : 'success'" 
+          @click="togglePolling"
+          v-ripple
+        >
+          <i :class="pollingEnabled ? 'ri-pause-circle-line' : 'ri-play-circle-line'" style="margin-right: 4px"></i>
+          {{ pollingEnabled ? '暂停轮询' : '启动轮询' }}
+        </ElButton>
+        <ElButton type="primary" :loading="loading" @click="handleRefresh" v-ripple>
+          <i class="ri-refresh-line" style="margin-right: 4px"></i>刷新
+        </ElButton>
+      </div>
     </div>
 
     <!-- 服务器卡片 -->
@@ -220,7 +230,9 @@
   const loading = ref(false)
   const serverData = ref<any>({})
   const lastUpdate = ref('')
-  let timer: ReturnType<typeof setInterval> | null = null
+  const pollingEnabled = ref(false)
+  let pollingTimer: ReturnType<typeof setInterval> | null = null
+  const pollingInterval = 5000 // 5秒轮询一次
 
   const getProgressColor = (percent: number, type: string) => {
     const colors: Record<string, string> = {
@@ -251,8 +263,7 @@
     try {
       const res = await fetchServerInfo()
       serverData.value = res.data || res || {}
-      const now = new Date()
-      lastUpdate.value = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`
+      updateLastUpdate()
     } catch (e) {
       console.error('获取服务器信息失败:', e)
     } finally {
@@ -262,17 +273,51 @@
     }
   }
 
+  const updateLastUpdate = () => {
+    const now = new Date()
+    lastUpdate.value = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`
+  }
+
+  const startPolling = () => {
+    if (pollingTimer) {
+      clearInterval(pollingTimer)
+      pollingTimer = null
+    }
+    
+    pollingTimer = setInterval(() => {
+      fetchData(true)
+    }, pollingInterval)
+    
+    console.log('轮询已启动，间隔:', pollingInterval, 'ms')
+  }
+
+  const stopPolling = () => {
+    if (pollingTimer) {
+      clearInterval(pollingTimer)
+      pollingTimer = null
+    }
+    console.log('轮询已停止')
+  }
+
+  const togglePolling = () => {
+    pollingEnabled.value = !pollingEnabled.value
+    
+    if (pollingEnabled.value) {
+      startPolling()
+    } else {
+      stopPolling()
+    }
+  }
+
   onMounted(() => {
+    // 初始加载时获取一次数据
     fetchData()
-    // 每 5 秒自动刷新
-    timer = setInterval(() => fetchData(true), 5000)
+    // 默认不开启轮询
+    pollingEnabled.value = false
   })
 
   onUnmounted(() => {
-    if (timer) {
-      clearInterval(timer)
-      timer = null
-    }
+    stopPolling()
   })
 </script>
 
@@ -285,8 +330,13 @@
     display: flex;
     gap: 12px;
     align-items: center;
-    justify-content: flex-end;
+    justify-content: space-between;
     margin-bottom: 16px;
+  }
+
+  .header-buttons {
+    display: flex;
+    gap: 8px;
   }
 
   .last-update {

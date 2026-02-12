@@ -19,7 +19,9 @@ import {
   ScatterChart,
   RadarChart,
   MapChart,
-  CandlestickChart
+  CandlestickChart,
+  GraphChart,
+  TreeChart
 } from 'echarts/charts'
 
 // 导入组件
@@ -50,6 +52,8 @@ echarts.use([
   RadarChart,
   MapChart,
   CandlestickChart,
+  GraphChart,
+  TreeChart,
 
   // 组件
   TitleComponent,
