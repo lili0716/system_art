@@ -6,7 +6,8 @@
       <ArtTableHeader v-model:columns="columnChecks" :loading="loading" @refresh="refreshData">
         <template #left>
           <ElButton type="default" @click="handleExport" :loading="exporting" v-ripple>
-            <i class="ri-file-excel-2-line" style="margin-right: 4px"></i>导出Excel
+            <i class="ri-file-excel-2-line" style="margin-right: 4px"></i>
+            {{ t('systemLog.toolbar.exportExcel') }}
           </ElButton>
         </template>
       </ArtTableHeader>
@@ -24,29 +25,39 @@
     </ElCard>
 
     <!-- 详情弹窗 -->
-    <ElDialog v-model="detailVisible" title="日志详情" width="700px" top="5vh">
+    <ElDialog v-model="detailVisible" :title="t('systemLog.dialog.title')" width="700px" top="5vh">
       <ElDescriptions :column="2" border>
-        <ElDescriptionsItem label="请求时间" :span="2">{{
+        <ElDescriptionsItem :label="t('systemLog.detail.requestTime')" :span="2">{{
           formatTime(detailData.requestTime)
         }}</ElDescriptionsItem>
-        <ElDescriptionsItem label="用户工号">{{ detailData.employeeId || '-' }}</ElDescriptionsItem>
-        <ElDescriptionsItem label="用户姓名">{{ detailData.nickName || '-' }}</ElDescriptionsItem>
-        <ElDescriptionsItem label="请求方法">
+        <ElDescriptionsItem :label="t('systemLog.detail.employeeId')">
+          {{ detailData.employeeId || '-' }}
+        </ElDescriptionsItem>
+        <ElDescriptionsItem :label="t('systemLog.detail.nickName')">
+          {{ detailData.nickName || '-' }}
+        </ElDescriptionsItem>
+        <ElDescriptionsItem :label="t('systemLog.detail.method')">
           <ElTag :type="getMethodTagType(detailData.method)" size="small" effect="dark">{{
             detailData.method
           }}</ElTag>
         </ElDescriptionsItem>
-        <ElDescriptionsItem label="状态码">
+        <ElDescriptionsItem :label="t('systemLog.detail.statusCode')">
           <ElTag :type="detailData.responseCode === 200 ? 'success' : 'danger'" size="small">{{
             detailData.responseCode
           }}</ElTag>
         </ElDescriptionsItem>
-        <ElDescriptionsItem label="请求URI" :span="2">{{ detailData.uri }}</ElDescriptionsItem>
-        <ElDescriptionsItem label="耗时">{{ detailData.duration }}ms</ElDescriptionsItem>
-        <ElDescriptionsItem label="IP地址">{{ detailData.ip }}</ElDescriptionsItem>
+        <ElDescriptionsItem :label="t('systemLog.detail.uri')" :span="2">
+          {{ detailData.uri }}
+        </ElDescriptionsItem>
+        <ElDescriptionsItem :label="t('systemLog.detail.duration')">
+          {{ detailData.duration }}ms
+        </ElDescriptionsItem>
+        <ElDescriptionsItem :label="t('systemLog.detail.ip')">
+          {{ detailData.ip }}
+        </ElDescriptionsItem>
       </ElDescriptions>
       <div v-if="detailData.requestParams" style="margin-top: 16px">
-        <div class="detail-label">请求参数:</div>
+        <div class="detail-label">{{ t('systemLog.detail.requestParams') }}</div>
         <ElInput
           type="textarea"
           :model-value="formatJson(detailData.requestParams)"
@@ -55,7 +66,7 @@
         />
       </div>
       <div v-if="detailData.responseBody" style="margin-top: 16px">
-        <div class="detail-label">响应内容:</div>
+        <div class="detail-label">{{ t('systemLog.detail.responseBody') }}</div>
         <ElInput
           type="textarea"
           :model-value="formatJson(detailData.responseBody)"
@@ -73,8 +84,11 @@
   import { fetchSystemLogs, exportSystemLogs } from '@/api/system-manage'
   import { useTable } from '@/hooks/core/useTable'
   import ArtButtonTable from '@/components/core/forms/art-button-table/index.vue'
+  import { useI18n } from 'vue-i18n'
 
   defineOptions({ name: 'SystemLog' })
+
+  const { t } = useI18n()
 
   const exporting = ref(false)
   const detailVisible = ref(false)
@@ -85,9 +99,9 @@
     {
       type: 'daterange',
       key: 'dateRange',
-      label: '时间范围',
+      label: t('systemLog.search.dateRange'),
       props: {
-        type: 'daterange', // 必须显式传递 type 给 ElDatePicker
+        type: 'daterange',
         valueFormat: 'YYYY-MM-DD HH:mm:ss',
         defaultTime: [new Date(2000, 1, 1, 0, 0, 0), new Date(2000, 2, 1, 23, 59, 59)]
       }
@@ -95,23 +109,22 @@
     {
       type: 'input',
       key: 'nickName',
-      label: '用户姓名',
-      props: { placeholder: '请输入用户姓名' }
+      label: t('systemLog.search.nickName'),
+      props: { placeholder: t('systemLog.search.nickNamePlaceholder') }
     },
     {
       type: 'input',
       key: 'employeeId',
-      label: '工号',
-      props: { placeholder: '请输入工号' }
+      label: t('systemLog.search.employeeId'),
+      props: { placeholder: t('systemLog.search.employeeIdPlaceholder') }
     },
     {
       type: 'select',
       key: 'method',
-      label: '请求方法',
+      label: t('systemLog.search.method'),
       props: {
-        placeholder: '全部',
+        placeholder: t('systemLog.search.methodPlaceholder'),
         options: [
-          // options 必须放在 props 里面
           { label: 'GET', value: 'GET' },
           { label: 'POST', value: 'POST' },
           { label: 'PUT', value: 'PUT' },
@@ -122,8 +135,8 @@
     {
       type: 'input',
       key: 'uri',
-      label: '请求URI',
-      props: { placeholder: '请输入请求路径' }
+      label: t('systemLog.search.uri'),
+      props: { placeholder: t('systemLog.search.uriPlaceholder') }
     }
   ])
 
@@ -183,34 +196,34 @@
       },
       columnsFactory: () => [
         {
-          prop: 'id', // Use ID as key but display custom index if needed via slot/formatter or backend id
+          prop: 'id',
           label: 'ID',
           width: 80,
           align: 'center'
         },
         {
           prop: 'requestTime',
-          label: '请求时间',
+          label: t('systemLog.table.requestTime'),
           width: 170,
           align: 'center',
           formatter: (row: any) => formatTime(row.requestTime)
         },
         {
           prop: 'employeeId',
-          label: '工号',
+          label: t('systemLog.table.employeeId'),
           width: 100,
           align: 'center'
         },
         {
           prop: 'nickName',
-          label: '用户姓名',
+          label: t('systemLog.table.nickName'),
           width: 100,
           align: 'center',
           formatter: (row: any) => row.nickName || '-'
         },
         {
           prop: 'method',
-          label: '方法',
+          label: t('systemLog.table.method'),
           width: 90,
           align: 'center',
           formatter: (row: any) => {
@@ -223,20 +236,20 @@
         },
         {
           prop: 'uri',
-          label: '请求URI',
+          label: t('systemLog.table.uri'),
           minWidth: 200,
           showOverflowTooltip: true
         },
         {
           prop: 'requestParams',
-          label: '请求参数',
+          label: t('systemLog.table.requestParams'),
           minWidth: 150,
           showOverflowTooltip: true,
           formatter: (row: any) => row.requestParams || '-'
         },
         {
           prop: 'responseCode',
-          label: '状态码',
+          label: t('systemLog.table.statusCode'),
           width: 90,
           align: 'center',
           formatter: (row: any) => {
@@ -249,7 +262,7 @@
         },
         {
           prop: 'duration',
-          label: '耗时',
+          label: t('systemLog.table.duration'),
           width: 100,
           align: 'center',
           formatter: (row: any) => {
@@ -262,21 +275,21 @@
         },
         {
           prop: 'ip',
-          label: 'IP地址',
+          label: t('systemLog.table.ip'),
           width: 130,
           align: 'center'
         },
         {
           prop: 'operation',
-          label: '操作',
+          label: t('systemLog.table.operation'),
           width: 90,
           fixed: 'right',
           align: 'center',
           formatter: (row: any) => {
             return h(ArtButtonTable, {
-              type: 'view', // Using 'view' type if available or simpler button
-              text: '详情', // Overwrite text if needed or just use default icon
-              title: '查看详情',
+              type: 'view',
+              text: t('systemLog.table.detail'),
+              title: t('systemLog.table.detailTitle'),
               onClick: () => showDetail(row)
             })
           }
@@ -339,13 +352,13 @@
       const url = window.URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = url
-      link.download = `系统日志_${Date.now()}.xlsx`
+      link.download = `${t('systemLog.export.filenamePrefix')}_${Date.now()}.xlsx`
       link.click()
       window.URL.revokeObjectURL(url)
-      ElMessage.success('导出成功')
+      ElMessage.success(t('systemLog.messages.exportSuccess'))
     } catch (e) {
       console.error('导出失败:', e)
-      ElMessage.error('导出失败')
+      ElMessage.error(t('systemLog.messages.exportFailed'))
     } finally {
       exporting.value = false
     }

@@ -60,8 +60,8 @@ export class RoutePermissionValidator {
     }
 
     for (const menuItem of menuList) {
-      // 跳过隐藏的菜单项
-      if (menuItem.meta?.isHide || !menuItem.path) {
+      // 跳过未配置路径的菜单项（隐藏菜单仍然需要权限控制）
+      if (!menuItem.path) {
         continue
       }
 

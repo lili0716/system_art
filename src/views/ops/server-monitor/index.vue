@@ -3,18 +3,24 @@
   <div class="server-monitor-page">
     <!-- 刷新按钮和轮询控制 -->
     <div class="page-header">
-      <span class="last-update" v-if="lastUpdate">最后更新: {{ lastUpdate }}</span>
+      <span class="last-update" v-if="lastUpdate">
+        {{ t('serverMonitorPage.lastUpdate') }} {{ lastUpdate }}
+      </span>
       <div class="header-buttons">
-        <ElButton 
-          :type="pollingEnabled ? 'warning' : 'success'" 
-          @click="togglePolling"
-          v-ripple
-        >
-          <i :class="pollingEnabled ? 'ri-pause-circle-line' : 'ri-play-circle-line'" style="margin-right: 4px"></i>
-          {{ pollingEnabled ? '暂停轮询' : '启动轮询' }}
+        <ElButton :type="pollingEnabled ? 'warning' : 'success'" @click="togglePolling" v-ripple>
+          <i
+            :class="pollingEnabled ? 'ri-pause-circle-line' : 'ri-play-circle-line'"
+            style="margin-right: 4px"
+          ></i>
+          {{
+            pollingEnabled
+              ? t('serverMonitorPage.buttons.stopPolling')
+              : t('serverMonitorPage.buttons.startPolling')
+          }}
         </ElButton>
         <ElButton type="primary" :loading="loading" @click="handleRefresh" v-ripple>
-          <i class="ri-refresh-line" style="margin-right: 4px"></i>刷新
+          <i class="ri-refresh-line" style="margin-right: 4px"></i
+          >{{ t('serverMonitorPage.buttons.refresh') }}
         </ElButton>
       </div>
     </div>
@@ -24,7 +30,9 @@
       <ElCard class="server-card" shadow="hover">
         <template #header>
           <div class="card-header">
-            <span class="server-name">{{ serverData.hostName || '当前服务器' }}</span>
+            <span class="server-name">
+              {{ serverData.hostName || t('serverMonitorPage.cards.currentServer') }}
+            </span>
             <span class="server-ip">{{ serverData.ip || '-' }}</span>
           </div>
         </template>
@@ -63,7 +71,7 @@
           <!-- 指标 -->
           <div class="metrics-area">
             <div class="metric-item">
-              <div class="metric-label">CPU</div>
+              <div class="metric-label">{{ t('serverMonitorPage.metrics.cpu') }}</div>
               <div class="metric-bar">
                 <ElProgress
                   :percentage="serverData.cpu?.usage || 0"
@@ -74,7 +82,7 @@
               </div>
             </div>
             <div class="metric-item">
-              <div class="metric-label">RAM</div>
+              <div class="metric-label">{{ t('serverMonitorPage.metrics.ram') }}</div>
               <div class="metric-bar">
                 <ElProgress
                   :percentage="serverData.ram?.usage || 0"
@@ -85,7 +93,7 @@
               </div>
             </div>
             <div class="metric-item">
-              <div class="metric-label">SWAP</div>
+              <div class="metric-label">{{ t('serverMonitorPage.metrics.swap') }}</div>
               <div class="metric-bar">
                 <ElProgress
                   :percentage="serverData.swap?.usage || 0"
@@ -96,7 +104,7 @@
               </div>
             </div>
             <div class="metric-item">
-              <div class="metric-label">DISK</div>
+              <div class="metric-label">{{ t('serverMonitorPage.metrics.disk') }}</div>
               <div class="metric-bar">
                 <ElProgress
                   :percentage="serverData.disk?.usage || 0"
@@ -120,18 +128,20 @@
             <template #header>
               <div class="detail-header">
                 <i class="ri-cpu-line detail-icon cpu-icon"></i>
-                <span>CPU 信息</span>
+                <span>{{ t('serverMonitorPage.cpu.title') }}</span>
               </div>
             </template>
             <ElDescriptions :column="1" size="small" border>
-              <ElDescriptionsItem label="名称">{{ serverData.cpu?.name }}</ElDescriptionsItem>
-              <ElDescriptionsItem label="物理核心">{{
-                serverData.cpu?.physicalCount
-              }}</ElDescriptionsItem>
-              <ElDescriptionsItem label="逻辑核心">{{
+              <ElDescriptionsItem :label="t('serverMonitorPage.cpu.name')">
+                {{ serverData.cpu?.name }}
+              </ElDescriptionsItem>
+              <ElDescriptionsItem :label="t('serverMonitorPage.cpu.physicalCores')">
+                serverData.cpu?.physicalCount }}</ElDescriptionsItem
+              >
+              <ElDescriptionsItem :label="t('serverMonitorPage.cpu.logicalCores')">{{
                 serverData.cpu?.logicalCount
               }}</ElDescriptionsItem>
-              <ElDescriptionsItem label="使用率">
+              <ElDescriptionsItem :label="t('serverMonitorPage.common.usage')">
                 <span :style="{ color: getUsageColor(serverData.cpu?.usage) }"
                   >{{ serverData.cpu?.usage }}%</span
                 >
@@ -146,14 +156,20 @@
             <template #header>
               <div class="detail-header">
                 <i class="ri-ram-line detail-icon ram-icon"></i>
-                <span>内存信息</span>
+                <span>{{ t('serverMonitorPage.ram.title') }}</span>
               </div>
             </template>
             <ElDescriptions :column="1" size="small" border>
-              <ElDescriptionsItem label="总内存">{{ serverData.ram?.total }}</ElDescriptionsItem>
-              <ElDescriptionsItem label="已使用">{{ serverData.ram?.used }}</ElDescriptionsItem>
-              <ElDescriptionsItem label="可用">{{ serverData.ram?.free }}</ElDescriptionsItem>
-              <ElDescriptionsItem label="使用率">
+              <ElDescriptionsItem :label="t('serverMonitorPage.ram.total')">
+                {{ serverData.ram?.total }}
+              </ElDescriptionsItem>
+              <ElDescriptionsItem :label="t('serverMonitorPage.ram.used')">
+                {{ serverData.ram?.used }}
+              </ElDescriptionsItem>
+              <ElDescriptionsItem :label="t('serverMonitorPage.ram.free')">
+                {{ serverData.ram?.free }}
+              </ElDescriptionsItem>
+              <ElDescriptionsItem :label="t('serverMonitorPage.common.usage')">
                 <span :style="{ color: getUsageColor(serverData.ram?.usage) }"
                   >{{ serverData.ram?.usage }}%</span
                 >
@@ -168,20 +184,22 @@
             <template #header>
               <div class="detail-header">
                 <i class="ri-code-box-line detail-icon jvm-icon"></i>
-                <span>JVM 信息</span>
+                <span>{{ t('serverMonitorPage.jvm.title') }}</span>
               </div>
             </template>
             <ElDescriptions :column="1" size="small" border>
-              <ElDescriptionsItem label="版本"
-                >Java {{ serverData.jvm?.version }}</ElDescriptionsItem
-              >
-              <ElDescriptionsItem label="最大内存">{{
+              <ElDescriptionsItem :label="t('serverMonitorPage.jvm.version')">
+                Java {{ serverData.jvm?.version }}
+              </ElDescriptionsItem>
+              <ElDescriptionsItem :label="t('serverMonitorPage.jvm.maxMemory')">{{
                 serverData.jvm?.maxMemory
               }}</ElDescriptionsItem>
-              <ElDescriptionsItem label="已用内存">{{
+              <ElDescriptionsItem :label="t('serverMonitorPage.jvm.usedMemory')">{{
                 serverData.jvm?.usedMemory
               }}</ElDescriptionsItem>
-              <ElDescriptionsItem label="运行时间">{{ serverData.jvm?.uptime }}</ElDescriptionsItem>
+              <ElDescriptionsItem :label="t('serverMonitorPage.jvm.uptime')">
+                {{ serverData.jvm?.uptime }}
+              </ElDescriptionsItem>
             </ElDescriptions>
           </ElCard>
         </ElCol>
@@ -197,16 +215,31 @@
         <template #header>
           <div class="detail-header">
             <i class="ri-hard-drive-2-line detail-icon disk-icon"></i>
-            <span>磁盘详情</span>
+            <span>{{ t('serverMonitorPage.disk.title') }}</span>
           </div>
         </template>
         <ElTable :data="serverData.disk.details" stripe border size="small">
-          <ElTableColumn prop="mount" label="挂载点" width="120" />
-          <ElTableColumn prop="type" label="文件系统" width="100" />
-          <ElTableColumn prop="total" label="总容量" width="100" align="center" />
-          <ElTableColumn prop="used" label="已使用" width="100" align="center" />
-          <ElTableColumn prop="free" label="可用" width="100" align="center" />
-          <ElTableColumn prop="usage" label="使用率" width="200">
+          <ElTableColumn prop="mount" :label="t('serverMonitorPage.disk.mount')" width="120" />
+          <ElTableColumn prop="type" :label="t('serverMonitorPage.disk.type')" width="100" />
+          <ElTableColumn
+            prop="total"
+            :label="t('serverMonitorPage.disk.total')"
+            width="100"
+            align="center"
+          />
+          <ElTableColumn
+            prop="used"
+            :label="t('serverMonitorPage.disk.used')"
+            width="100"
+            align="center"
+          />
+          <ElTableColumn
+            prop="free"
+            :label="t('serverMonitorPage.disk.free')"
+            width="100"
+            align="center"
+          />
+          <ElTableColumn prop="usage" :label="t('serverMonitorPage.common.usage')" width="200">
             <template #default="{ row }">
               <ElProgress
                 :percentage="row.usage"
@@ -224,8 +257,11 @@
 <script setup lang="ts">
   import { ref, onMounted, onUnmounted } from 'vue'
   import { fetchServerInfo } from '@/api/system-manage'
+  import { useI18n } from 'vue-i18n'
 
   defineOptions({ name: 'ServerMonitor' })
+
+  const { t } = useI18n()
 
   const loading = ref(false)
   const serverData = ref<any>({})
@@ -283,11 +319,11 @@
       clearInterval(pollingTimer)
       pollingTimer = null
     }
-    
+
     pollingTimer = setInterval(() => {
       fetchData(true)
     }, pollingInterval)
-    
+
     console.log('轮询已启动，间隔:', pollingInterval, 'ms')
   }
 
@@ -301,7 +337,7 @@
 
   const togglePolling = () => {
     pollingEnabled.value = !pollingEnabled.value
-    
+
     if (pollingEnabled.value) {
       startPolling()
     } else {

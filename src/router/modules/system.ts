@@ -6,8 +6,7 @@ export const systemRoutes: AppRouteRecord = {
   component: '/index/index',
   meta: {
     title: 'menus.system.title',
-    icon: 'ri:user-3-line',
-    roles: ['R_SUPER', 'R_ADMIN']
+    icon: 'ri:user-3-line'
   },
   children: [
     {
@@ -61,7 +60,7 @@ export const systemRoutes: AppRouteRecord = {
       name: 'SalaryStatistics',
       component: '/system/salary-statistics',
       meta: {
-        title: '薪酬统计',
+        title: 'menus.system.salaryStatistics',
         icon: 'ri:bar-chart-box-line',
         keepAlive: true,
         roles: ['R_SUPER', 'R_ADMIN']

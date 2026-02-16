@@ -5,7 +5,7 @@ export const opsRoutes: AppRouteRecord = {
   name: 'Ops',
   component: '/index/index',
   meta: {
-    title: '运维管理',
+    title: 'menus.ops.title',
     icon: 'ri:server-line',
     roles: ['R_SUPER', 'R_ADMIN']
   },
@@ -15,7 +15,7 @@ export const opsRoutes: AppRouteRecord = {
       name: 'ServerOps',
       component: '/ops/server-monitor',
       meta: {
-        title: '服务器运维',
+        title: 'menus.ops.serverMonitor',
         keepAlive: true,
         roles: ['R_SUPER', 'R_ADMIN']
       }
@@ -25,7 +25,7 @@ export const opsRoutes: AppRouteRecord = {
       name: 'SystemLogs',
       component: '/ops/system-log',
       meta: {
-        title: '系统日志',
+        title: 'menus.ops.systemLog',
         keepAlive: true,
         roles: ['R_SUPER', 'R_ADMIN']
       }

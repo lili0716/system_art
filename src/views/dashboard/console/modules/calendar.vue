@@ -1,106 +1,114 @@
 <template>
-  <el-calendar v-model="value" ref="calendar">
-    <template #header="{ date }">
-      <span>{{ date }}</span>
-      <el-button-group>
-        <el-button size="small" @click="selectDate('prev-month')" :disabled="button_status">
-          {{ $t('calendar.previousMonth') }}
-        </el-button>
-        <el-button size="small" @click="selectDate('today')">{{ $t('calendar.today') }}</el-button>
-      </el-button-group>
-    </template>
-    <template #date-cell="{ data }">
-      <el-popover
-        :width="300"
-        popper-style="box-shadow: rgb(14 18 22 / 35%) 0px 10px 38px -10px, rgb(14 18 22 / 20%) 0px 10px 20px -15px; padding: 20px;"
-      >
-        <template #reference>
-          <div
-            class="flex flex-col items-center justify-center h-full rounded-md"
-            @click="handleDateClick(data)"
-            :class="getColor(data)"
-          >
-            <p :class="data.isSelected ? 'is-selected' : ''">
-              {{ data.day.split('-').slice(2).join('-') }}
-              {{ data.isSelected ? '✔️' : '' }}
-            </p>
-          </div>
-        </template>
-        <template #default>
-          <div class="grid grid-cols-1 gap-4" style="">
-            <el-avatar
-              :size="90"
-              src="https://avatars.githubusercontent.com/u/72015883?v=4"
-              style="margin-bottom: 8px"
-            />
-            <div>
-              <div class="grid grid-cols-4 gap-4" style="margin: 0; font-weight: 500">
-                <div
-                  class="my-auto"
-                  :class="attendanceStatus[data.day]?.checkInTime ? 'col-span-4' : 'col-span-2'"
-                >
-                  {{ $t('calendar.checkIn')
-                  }}{{ attendanceStatus[data.day]?.checkInTime || $t('calendar.noData') }}
+  <div class="art-card h-128 p-5 mb-5 max-sm:mb-4">
+    <el-calendar v-model="value" ref="calendar">
+      <template #header="{ date }">
+        <span>{{ date }}</span>
+        <el-button-group>
+          <el-button size="small" @click="selectDate('prev-month')" :disabled="button_status">
+            {{ $t('calendar.previousMonth') }}
+          </el-button>
+          <el-button size="small" @click="selectDate('today')">{{
+            $t('calendar.today')
+          }}</el-button>
+        </el-button-group>
+      </template>
+      <template #date-cell="{ data }">
+        <el-popover
+          :width="300"
+          popper-style="box-shadow: rgb(14 18 22 / 35%) 0px 10px 38px -10px, rgb(14 18 22 / 20%) 0px 10px 20px -15px; padding: 20px;"
+        >
+          <template #reference>
+            <div
+              class="flex flex-col items-center justify-center h-full rounded-md"
+              @click="handleDateClick(data)"
+              :class="getColor(data)"
+            >
+              <p :class="data.isSelected ? 'is-selected' : ''">
+                {{ data.day.split('-').slice(2).join('-') }}
+                {{ data.isSelected ? '✔️' : '' }}
+              </p>
+            </div>
+          </template>
+          <template #default>
+            <div class="grid grid-cols-1 gap-4" style="">
+              <el-avatar
+                :size="90"
+                src="https://avatars.githubusercontent.com/u/72015883?v=4"
+                style="margin-bottom: 8px"
+              />
+              <div>
+                <div class="grid grid-cols-4 gap-4" style="margin: 0; font-weight: 500">
+                  <div
+                    class="my-auto"
+                    :class="attendanceStatus[data.day]?.checkInTime ? 'col-span-4' : 'col-span-2'"
+                  >
+                    {{ $t('calendar.checkIn')
+                    }}{{ attendanceStatus[data.day]?.checkInTime || $t('calendar.noData') }}
+                  </div>
+                  <el-button
+                    type="primary"
+                    @click="handleButtonClick('check_in', data.day)"
+                    class="col-span-2"
+                    v-if="
+                      !attendanceStatus[data.day]?.checkInTime &&
+                      attendanceStatus[data.day]?.status !== 'absent' &&
+                      isBeforeToday(data.day)
+                    "
+                  >
+                    {{ $t('calendar.Replacement') }}
+                  </el-button>
+                  <el-button
+                    type="primary"
+                    @click="handleButtonClick('personal_leave', data.day)"
+                    class="col-span-2"
+                    v-if="
+                      attendanceStatus[data.day]?.status === 'absent' && isBeforeToday(data.day)
+                    "
+                  >
+                    {{ $t('calendar.Leave') }}
+                  </el-button>
                 </div>
-                <el-button
-                  type="primary"
-                  @click="handleButtonClick('check_in', data.day)"
-                  class="col-span-2"
-                  v-if="
-                    !attendanceStatus[data.day]?.checkInTime &&
-                    attendanceStatus[data.day]?.status !== 'absent' &&
-                    isBeforeToday(data.day)
-                  "
-                >
-                  {{ $t('calendar.Replacement') }}
-                </el-button>
-                <el-button
-                  type="primary"
-                  @click="handleButtonClick('personal_leave', data.day)"
-                  class="col-span-2"
-                  v-if="attendanceStatus[data.day]?.status === 'absent' && isBeforeToday(data.day)"
-                >
-                  {{ $t('calendar.Leave') }}
-                </el-button>
+              </div>
+              <div>
+                <div class="grid grid-cols-4 gap-4" style="margin: 0; font-weight: 500">
+                  <!-- @element-plus -->
+                  <div
+                    class="my-auto"
+                    :class="attendanceStatus[data.day]?.checkOutTime ? 'col-span-4' : 'col-span-2'"
+                  >
+                    {{ $t('calendar.checkOut')
+                    }}{{ attendanceStatus[data.day]?.checkOutTime || $t('calendar.noData') }}
+                  </div>
+                  <el-button
+                    type="primary"
+                    @click="handleButtonClick('check_out', data.day)"
+                    class="col-span-2"
+                    v-if="
+                      !attendanceStatus[data.day]?.checkOutTime &&
+                      attendanceStatus[data.day]?.status !== 'absent' &&
+                      isBeforeToday(data.day)
+                    "
+                  >
+                    {{ $t('calendar.Replacement') }}
+                  </el-button>
+                  <el-button
+                    type="primary"
+                    @click="handleButtonClick('check_all', data.day)"
+                    class="col-span-2"
+                    v-if="
+                      attendanceStatus[data.day]?.status === 'absent' && isBeforeToday(data.day)
+                    "
+                  >
+                    {{ $t('calendar.Replacement') }}
+                  </el-button>
+                </div>
               </div>
             </div>
-            <div>
-              <div class="grid grid-cols-4 gap-4" style="margin: 0; font-weight: 500">
-                <!-- @element-plus -->
-                <div
-                  class="my-auto"
-                  :class="attendanceStatus[data.day]?.checkOutTime ? 'col-span-4' : 'col-span-2'"
-                >
-                  {{ $t('calendar.checkOut')
-                  }}{{ attendanceStatus[data.day]?.checkOutTime || $t('calendar.noData') }}
-                </div>
-                <el-button
-                  type="primary"
-                  @click="handleButtonClick('check_out', data.day)"
-                  class="col-span-2"
-                  v-if="
-                    !attendanceStatus[data.day]?.checkOutTime &&
-                    attendanceStatus[data.day]?.status !== 'absent' &&
-                    isBeforeToday(data.day)
-                  "
-                >
-                  {{ $t('calendar.Replacement') }}
-                </el-button>
-                <el-button
-                  type="primary"
-                  @click="handleButtonClick('check_all', data.day)"
-                  class="col-span-2"
-                  v-if="attendanceStatus[data.day]?.status === 'absent' && isBeforeToday(data.day)"
-                >
-                  {{ $t('calendar.Replacement') }}
-                </el-button>
-              </div>
-            </div>
-          </div>
-        </template>
-      </el-popover>
-    </template>
-  </el-calendar>
+          </template>
+        </el-popover>
+      </template>
+    </el-calendar>
+  </div>
   <ElDialog v-model="dialogVisible" title="Attendance Details" width="600px" @closed="handleReset">
     <ElCard shadow="never" class="art-card-xs">
       <ArtForm
