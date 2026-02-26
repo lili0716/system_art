@@ -39,6 +39,16 @@ export const attendanceRoutes: AppRouteRecord = {
         keepAlive: true,
         roles: ['R_SUPER', 'R_ADMIN']
       }
+    },
+    {
+      path: 'schedule',
+      name: 'AttendanceSchedule',
+      component: '/attendance/schedule',
+      meta: {
+        title: '排班管理',
+        keepAlive: true,
+        roles: ['R_SUPER', 'R_ADMIN']
+      }
     }
   ]
 }

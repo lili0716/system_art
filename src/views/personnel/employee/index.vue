@@ -168,10 +168,10 @@
           formatter: (row) => formatDate(row.leaveDate)
         },
         {
-          prop: 'createTime',
-          label: '创建日期',
+          prop: 'departmentName',
+          label: '所属部门',
           align: 'center',
-          formatter: (row) => formatDate(row.createTime)
+          formatter: (row) => row.departmentName || '-'
         },
         {
           prop: 'updateTime',

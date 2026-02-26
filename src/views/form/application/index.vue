@@ -47,14 +47,14 @@
       :readonly="isView"
       :title="dialogTitle"
       :initial-data="currentForm"
-      @save="handleSave"
     />
   </div>
 </template>
 
 <script setup lang="ts">
   import { useTable } from '@/hooks/core/useTable'
-  import { getFormList, createPunchCardForm, createBusinessTripForm, createFieldWorkForm, createLeaveForm, revokeForm } from '@/api/system-manage'
+  import { useRouter } from 'vue-router'
+  import { getFormList, revokeForm } from '@/api/system-manage'
   import FormSearch from './modules/form-search.vue'
   import FormDialog from '@/components/business/FormDialog.vue'
   import { ElTag, ElMessage, ElMessageBox } from 'element-plus'
@@ -65,6 +65,7 @@
 
   defineOptions({ name: 'FormApplication' })
 
+  const router = useRouter()
   const userStore = useUserStore()
 
   // 搜索表单
@@ -75,9 +76,9 @@
 
   const showSearchBar = ref(true)
 
-  // 弹窗
+  // 弹窗（只用于查看详情）
   const dialogVisible = ref(false)
-  const isView = ref(false)
+  const isView = ref(true)
   const currentForm = ref({})
   const dialogTitle = computed(() => isView.value ? '申请详情' : '新增申请')
 
@@ -275,9 +276,7 @@
    * 新增申请
    */
   const handleCreate = () => {
-    isView.value = false
-    currentForm.value = {}
-    dialogVisible.value = true
+    router.push('/form/application/edit')
   }
 
   /**
@@ -286,7 +285,6 @@
   const handleView = (row: any) => {
     isView.value = true
     const data = { ...row }
-    // Data Mapping for Display
     if (row.type === 1 && row.punchDate && row.punchTime) {
       data.punchTime = `${row.punchDate} ${row.punchTime}`
     } else if (row.type === 2) {
@@ -323,30 +321,5 @@
         console.error(error)
       }
     })
-  }
-
-  /**
-   * 保存申请
-   */
-  const handleSave = async (data: any) => {
-    try {
-      data.applicant = { id: userStore.info.userId }
-      
-      if (data.type === 1) {
-        await createPunchCardForm(data)
-      } else if (data.type === 2) {
-        await createBusinessTripForm(data)
-      } else if (data.type === 3) {
-        await createFieldWorkForm(data)
-      } else if (data.type === 4) {
-        await createLeaveForm(data)
-      }
-      ElMessage.success('提交成功')
-      dialogVisible.value = false
-      refreshData()
-    } catch (error) {
-      console.error(error)
-      ElMessage.error('提交失败')
-    }
   }
 </script>

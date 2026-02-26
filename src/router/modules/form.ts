@@ -20,6 +20,15 @@ export const formRoutes: AppRouteRecord = {
             }
         },
         {
+            path: 'application/edit',
+            name: 'FormApplicationEdit',
+            component: '/form/application/form-edit',
+            meta: {
+                title: '新增申请',
+                keepAlive: false
+            }
+        },
+        {
             path: 'approval',
             name: 'FormApproval',
             component: '/form/approval',
