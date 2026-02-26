@@ -102,7 +102,7 @@
 <script setup lang="ts">
   import { ref, computed, h, onMounted } from 'vue'
   import { ArrowLeft, ArrowRight, Refresh, Check } from '@element-plus/icons-vue'
-  import { ElMessage, ElTag } from 'element-plus'
+  import { ElMessage } from 'element-plus'
   import { useTable } from '@/hooks/core/useTable'
   import {
     getMonthSchedule,
@@ -110,7 +110,7 @@
     updateScheduleCell,
   } from '@/api/schedule'
   import { getDepartmentOptions } from '@/api/system-manage'
-  import ArtButtonTable from '@/components/core/forms/art-button-table/index.vue'
+  // import ArtButtonTable from '@/components/core/forms/art-button-table/index.vue'
 
   defineOptions({ name: 'AttendanceSchedule' })
 
