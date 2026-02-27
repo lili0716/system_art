@@ -18,7 +18,12 @@
         </ElCol>
         <ElCol :span="6">
           <ElFormItem label="性别">
-            <ElSelect v-model="model.userGender" placeholder="请选择性别" clearable style="width: 100%">
+            <ElSelect
+              v-model="model.userGender"
+              placeholder="请选择性别"
+              clearable
+              style="width: 100%"
+            >
               <ElOption label="男" value="男" />
               <ElOption label="女" value="女" />
             </ElSelect>
@@ -27,23 +32,23 @@
         <ElCol :span="6">
           <ElFormItem label="在职时长">
             <div class="flex items-center">
-              <ElInputNumber 
-                v-model="model.tenureMin" 
-                :min="0" 
-                :precision="1" 
+              <ElInputNumber
+                v-model="model.tenureMin"
+                :min="0"
+                :precision="1"
                 :step="0.5"
                 placeholder="最小"
-                style="width: 100px" 
+                style="width: 100px"
                 :controls="false"
               />
               <span class="mx-2 text-gray-400">-</span>
-              <ElInputNumber 
-                v-model="model.tenureMax" 
-                :min="0" 
-                :precision="1" 
+              <ElInputNumber
+                v-model="model.tenureMax"
+                :min="0"
+                :precision="1"
                 :step="0.5"
                 placeholder="最大"
-                style="width: 100px" 
+                style="width: 100px"
                 :controls="false"
               />
               <span class="ml-2 text-gray-500">年</span>

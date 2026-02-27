@@ -6,7 +6,13 @@
     @update:model-value="handleUpdateShow"
     @close="handleClose"
   >
-    <el-form ref="formRef" :model="formData" :rules="rules" label-width="100px" :disabled="readonly">
+    <el-form
+      ref="formRef"
+      :model="formData"
+      :rules="rules"
+      label-width="100px"
+      :disabled="readonly"
+    >
       <!-- Common Fields -->
       <el-form-item label="表单类型" prop="type">
         <el-select v-model="formData.type" placeholder="请选择表单类型" @change="handleTypeChange">
@@ -93,7 +99,7 @@
       <template v-if="formData.type === 4">
         <el-form-item label="请假类型" prop="leaveType">
           <el-select v-model="formData.leaveType" placeholder="请选择请假类型">
-             <!-- 1-事假，2-病假，3-产假，4-婚假，5-丧假，6-年假，7-调休 -->
+            <!-- 1-事假，2-病假，3-产假，4-婚假，5-丧假，6-年假，7-调休 -->
             <el-option label="事假" :value="1" />
             <el-option label="病假" :value="2" />
             <el-option label="婚假" :value="4" />
@@ -102,7 +108,7 @@
           </el-select>
         </el-form-item>
         <el-form-item label="开始时间" prop="startTime">
-           <el-date-picker
+          <el-date-picker
             v-model="formData.startTime"
             type="datetime"
             placeholder="选择开始时间"
@@ -111,7 +117,7 @@
           />
         </el-form-item>
         <el-form-item label="结束时间" prop="endTime">
-           <el-date-picker
+          <el-date-picker
             v-model="formData.endTime"
             type="datetime"
             placeholder="选择结束时间"
@@ -120,100 +126,106 @@
           />
         </el-form-item>
         <el-form-item label="请假天数" prop="leaveDays">
-          <el-input-number v-model="formData.leaveDays" :precision="1" :step="0.5" :min="0" disabled />
+          <el-input-number
+            v-model="formData.leaveDays"
+            :precision="1"
+            :step="0.5"
+            :min="0"
+            disabled
+          />
         </el-form-item>
         <el-form-item label="请假原因" prop="reason">
           <el-input v-model="formData.reason" type="textarea" placeholder="请输入请假原因" />
         </el-form-item>
       </template>
-      
+
       <el-form-item label="备注" prop="remark">
         <el-input v-model="formData.remark" type="textarea" placeholder="请输入备注" />
       </el-form-item>
     </el-form>
-    
+
     <!-- 审批流程/结果展示 -->
     <div v-if="readonly && formData.status !== 0" class="approval-info">
-        <el-divider content-position="left">审批详情</el-divider>
-        <el-descriptions :column="1" border>
-            <el-descriptions-item label="审批状态">
-                <el-tag :type="formData.status === 1 ? 'success' : 'danger'">
-                    {{ formData.status === 1 ? '已通过' : '已拒绝' }}
-                </el-tag>
-            </el-descriptions-item>
-            <el-descriptions-item label="审批人">
-                {{ formData.approver ? (formData.approver.nickName || formData.approver.username) : '未知' }}
-            </el-descriptions-item>
-            <el-descriptions-item label="审批时间">
-                {{ formData.approveTime || '-' }}
-            </el-descriptions-item>
-            <el-descriptions-item label="审批意见">
-                {{ formData.approveComment || '无' }}
-            </el-descriptions-item>
-        </el-descriptions>
+      <el-divider content-position="left">审批详情</el-divider>
+      <el-descriptions :column="1" border>
+        <el-descriptions-item label="审批状态">
+          <el-tag :type="formData.status === 1 ? 'success' : 'danger'">
+            {{ formData.status === 1 ? '已通过' : '已拒绝' }}
+          </el-tag>
+        </el-descriptions-item>
+        <el-descriptions-item label="审批人">
+          {{
+            formData.approver ? formData.approver.nickName || formData.approver.username : '未知'
+          }}
+        </el-descriptions-item>
+        <el-descriptions-item label="审批时间">
+          {{ formData.approveTime || '-' }}
+        </el-descriptions-item>
+        <el-descriptions-item label="审批意见">
+          {{ formData.approveComment || '无' }}
+        </el-descriptions-item>
+      </el-descriptions>
     </div>
 
     <template #footer>
       <span class="dialog-footer">
         <el-button @click="handleClose">{{ readonly ? '关闭' : '取消' }}</el-button>
-        <el-button v-if="!readonly" type="primary" @click="handleSave">
-          确定
-        </el-button>
+        <el-button v-if="!readonly" type="primary" @click="handleSave"> 确定 </el-button>
       </span>
     </template>
   </el-dialog>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, watch, computed } from 'vue'
-import { ElMessage } from 'element-plus'
-import type { FormInstance, FormRules } from 'element-plus'
-import { useUserStore } from '@/store/modules/user'
+  import { ref, reactive, watch, computed } from 'vue'
 
-const props = defineProps({
-  modelValue: {
-    type: Boolean,
-    required: true
-  },
-  title: {
-    type: String,
-    default: '新增申请'
-  },
-  readonly: {
-    type: Boolean,
-    default: false
-  },
-  initialData: {
-    type: Object,
-    default: () => ({})
-  }
-})
+  import type { FormInstance, FormRules } from 'element-plus'
+  import { useUserStore } from '@/store/modules/user'
 
-const userStore = useUserStore()
+  const props = defineProps({
+    modelValue: {
+      type: Boolean,
+      required: true
+    },
+    title: {
+      type: String,
+      default: '新增申请'
+    },
+    readonly: {
+      type: Boolean,
+      default: false
+    },
+    initialData: {
+      type: Object,
+      default: () => ({})
+    }
+  })
 
-const emit = defineEmits(['update:modelValue', 'save'])
+  const userStore = useUserStore()
 
-const formRef = ref<FormInstance>()
-const formData = reactive<any>({
-  type: undefined,
-  reason: '',
-  startTime: '',
-  endTime: '',
-  days: 1, // for leave
-  location: '', // for punch/trip/field
-  destination: '', // for trip
-  punchTime: '', // for punch
-  content: '', // for field
-  leaveType: undefined, // for leave
-  remark: '', // Common field
-  // Approval fields for display
-  status: 0,
-  approver: null,
-  approveTime: null,
-  approveComment: ''
-})
+  const emit = defineEmits(['update:modelValue', 'save'])
 
-const resetForm = () => {
+  const formRef = ref<FormInstance>()
+  const formData = reactive<any>({
+    type: undefined,
+    reason: '',
+    startTime: '',
+    endTime: '',
+    days: 1, // for leave
+    location: '', // for punch/trip/field
+    destination: '', // for trip
+    punchTime: '', // for punch
+    content: '', // for field
+    leaveType: undefined, // for leave
+    remark: '', // Common field
+    // Approval fields for display
+    status: 0,
+    approver: null,
+    approveTime: null,
+    approveComment: ''
+  })
+
+  const resetForm = () => {
     formData.type = undefined
     formData.reason = ''
     formData.startTime = ''
@@ -229,33 +241,36 @@ const resetForm = () => {
     formData.approver = null
     formData.approveTime = null
     formData.approveComment = ''
-}
-
-watch(() => props.modelValue, (val) => {
-  if (val) {
-    if (props.initialData && Object.keys(props.initialData).length > 0) {
-        Object.assign(formData, JSON.parse(JSON.stringify(props.initialData)))
-    } else {
-        resetForm()
-    }
   }
-})
 
-// Auto calculate leave days
-watch([() => formData.startTime, () => formData.endTime], ([start, end]) => {
-    if (formData.type === 4 && start && end) {
-        formData.leaveDays = calculateLeaveDuration(start, end)
+  watch(
+    () => props.modelValue,
+    (val) => {
+      if (val) {
+        if (props.initialData && Object.keys(props.initialData).length > 0) {
+          Object.assign(formData, JSON.parse(JSON.stringify(props.initialData)))
+        } else {
+          resetForm()
+        }
+      }
     }
-})
+  )
 
-/**
- * Calculate leave duration in days
- * Rules: 
- * - Standard working hours: Dynamic from user rule or default 09:00 - 18:00
- * - Lunch break: Fixed 12:00 - 13:00 (since not in rule entity)
- * - Effective working hours per day: 8 hours
- */
-const calculateLeaveDuration = (startTimeStr: string, endTimeStr: string): number => {
+  // Auto calculate leave days
+  watch([() => formData.startTime, () => formData.endTime], ([start, end]) => {
+    if (formData.type === 4 && start && end) {
+      formData.leaveDays = calculateLeaveDuration(start, end)
+    }
+  })
+
+  /**
+   * Calculate leave duration in days
+   * Rules:
+   * - Standard working hours: Dynamic from user rule or default 09:00 - 18:00
+   * - Lunch break: Fixed 12:00 - 13:00 (since not in rule entity)
+   * - Effective working hours per day: 8 hours
+   */
+  const calculateLeaveDuration = (startTimeStr: string, endTimeStr: string): number => {
     const startDate = new Date(startTimeStr)
     const endDate = new Date(endTimeStr)
 
@@ -266,150 +281,154 @@ const calculateLeaveDuration = (startTimeStr: string, endTimeStr: string): numbe
     let workStartMinute = 0
     let workEndHour = 18
     let workEndMinute = 0
-    
+
     // Lunch is hardcoded as it is not in AttendanceRule entity
     const LUNCH_START_HOUR = 12
     const LUNCH_END_HOUR = 13
 
     // Try get from user store
     if (userStore.info && userStore.info.attendanceRule) {
-        const rule = userStore.info.attendanceRule
-        if (rule.workInTime) {
-            const [h, m] = rule.workInTime.split(':').map(Number)
-            workStartHour = h
-            workStartMinute = m
-        }
-        if (rule.workOutTime) {
-            const [h, m] = rule.workOutTime.split(':').map(Number)
-            workEndHour = h
-            workEndMinute = m
-        }
+      const rule = userStore.info.attendanceRule
+      if (rule.workInTime) {
+        const [h, m] = rule.workInTime.split(':').map(Number)
+        workStartHour = h
+        workStartMinute = m
+      }
+      if (rule.workOutTime) {
+        const [h, m] = rule.workOutTime.split(':').map(Number)
+        workEndHour = h
+        workEndMinute = m
+      }
     }
-    
+
     let totalMilliseconds = 0
-    
+
     // Copy start date to iterate
     let current = new Date(startDate)
     current.setHours(0, 0, 0, 0)
-    
+
     const endDay = new Date(endDate)
     endDay.setHours(0, 0, 0, 0)
 
     while (current <= endDay) {
-        // Define working range for current day
-        const workStart = new Date(current)
-        workStart.setHours(workStartHour, workStartMinute, 0, 0)
-        
-        const workEnd = new Date(current)
-        workEnd.setHours(workEndHour, workEndMinute, 0, 0)
-        
-        const lunchStart = new Date(current)
-        lunchStart.setHours(LUNCH_START_HOUR, 0, 0, 0)
-        
-        const lunchEnd = new Date(current)
-        lunchEnd.setHours(LUNCH_END_HOUR, 0, 0, 0)
+      // Define working range for current day
+      const workStart = new Date(current)
+      workStart.setHours(workStartHour, workStartMinute, 0, 0)
 
-        // Determine actual span on this day
-        const actualStart = new Date(Math.max(workStart.getTime(), startDate.getTime()))
-        const actualEnd = new Date(Math.min(workEnd.getTime(), endDate.getTime()))
-        
-        if (actualStart < actualEnd) {
-            let duration = actualEnd.getTime() - actualStart.getTime()
-            
-            // Subtract lunch overlap
-            const lunchOverlapStart = new Date(Math.max(actualStart.getTime(), lunchStart.getTime()))
-            const lunchOverlapEnd = new Date(Math.min(actualEnd.getTime(), lunchEnd.getTime()))
-            
-            if (lunchOverlapStart < lunchOverlapEnd) {
-                duration -= (lunchOverlapEnd.getTime() - lunchOverlapStart.getTime())
-            }
-            
-            totalMilliseconds += duration
+      const workEnd = new Date(current)
+      workEnd.setHours(workEndHour, workEndMinute, 0, 0)
+
+      const lunchStart = new Date(current)
+      lunchStart.setHours(LUNCH_START_HOUR, 0, 0, 0)
+
+      const lunchEnd = new Date(current)
+      lunchEnd.setHours(LUNCH_END_HOUR, 0, 0, 0)
+
+      // Determine actual span on this day
+      const actualStart = new Date(Math.max(workStart.getTime(), startDate.getTime()))
+      const actualEnd = new Date(Math.min(workEnd.getTime(), endDate.getTime()))
+
+      if (actualStart < actualEnd) {
+        let duration = actualEnd.getTime() - actualStart.getTime()
+
+        // Subtract lunch overlap
+        const lunchOverlapStart = new Date(Math.max(actualStart.getTime(), lunchStart.getTime()))
+        const lunchOverlapEnd = new Date(Math.min(actualEnd.getTime(), lunchEnd.getTime()))
+
+        if (lunchOverlapStart < lunchOverlapEnd) {
+          duration -= lunchOverlapEnd.getTime() - lunchOverlapStart.getTime()
         }
-        
-        // Move to next day
-        current.setDate(current.getDate() + 1)
+
+        totalMilliseconds += duration
+      }
+
+      // Move to next day
+      current.setDate(current.getDate() + 1)
     }
 
     // Convert to days (1 day = 8 hours)
     const hours = totalMilliseconds / (1000 * 60 * 60)
     const days = hours / 8
-    
-    return parseFloat(days.toFixed(1))
-}
 
-const dialogTitle = computed(() => {
+    return parseFloat(days.toFixed(1))
+  }
+
+  const dialogTitle = computed(() => {
     if (props.readonly) return '申请详情'
     return props.title
-})
+  })
 
-const rules = reactive<FormRules>({
-  type: [{ required: true, message: '请选择表单类型', trigger: 'change' }],
-  punchTime: [{ required: true, message: '请选择打卡时间', trigger: 'change' }],
-  destination: [{ required: true, message: '请输入地点', trigger: 'blur' }],
-  location: [{ required: true, message: '请输入地点', trigger: 'blur' }],
-  startTime: [{ required: true, message: '请选择开始时间', trigger: 'change' }],
-  endTime: [{ required: true, message: '请选择结束时间', trigger: 'change' }],
-  reason: [{ required: true, message: '请输入事由', trigger: 'blur' }],
-  content: [{ required: true, message: '请输入内容', trigger: 'blur' }],
-  leaveType: [{ required: true, message: '请选择请假类型', trigger: 'change' }],
-  days: [{ required: true, message: '请输入天数', trigger: 'blur' }]
-})
+  const rules = reactive<FormRules>({
+    type: [{ required: true, message: '请选择表单类型', trigger: 'change' }],
+    punchTime: [{ required: true, message: '请选择打卡时间', trigger: 'change' }],
+    destination: [{ required: true, message: '请输入地点', trigger: 'blur' }],
+    location: [{ required: true, message: '请输入地点', trigger: 'blur' }],
+    startTime: [{ required: true, message: '请选择开始时间', trigger: 'change' }],
+    endTime: [{ required: true, message: '请选择结束时间', trigger: 'change' }],
+    reason: [{ required: true, message: '请输入事由', trigger: 'blur' }],
+    content: [{ required: true, message: '请输入内容', trigger: 'blur' }],
+    leaveType: [{ required: true, message: '请选择请假类型', trigger: 'change' }],
+    days: [{ required: true, message: '请输入天数', trigger: 'blur' }]
+  })
 
-const handleUpdateShow = (val: boolean) => {
-  emit('update:modelValue', val)
-}
+  const handleUpdateShow = (val: boolean) => {
+    emit('update:modelValue', val)
+  }
 
-const handleClose = () => {
-  emit('update:modelValue', false)
-}
+  const handleClose = () => {
+    emit('update:modelValue', false)
+  }
 
-const handleTypeChange = () => {
+  const handleTypeChange = () => {
     // Only clear type-specific fields, keep common
-}
+  }
 
-const handleSave = async () => {
-  if (!formRef.value) return
-  await formRef.value.validate((valid, fields) => {
-    if (valid) {
-      // Data Transformation
-      const payload = { ...formData }
-      if (payload.type === 1) { // PunchCard
+  const handleSave = async () => {
+    if (!formRef.value) return
+    await formRef.value.validate((valid) => {
+      if (valid) {
+        // Data Transformation
+        const payload = { ...formData }
+        if (payload.type === 1) {
+          // PunchCard
           if (payload.punchTime) {
-              const [date, time] = payload.punchTime.split(' ')
-              payload.punchDate = date
-              payload.punchTime = time
+            const [date, time] = payload.punchTime.split(' ')
+            payload.punchDate = date
+            payload.punchTime = time
           }
-      } else if (payload.type === 2) { // BusinessTrip
+        } else if (payload.type === 2) {
+          // BusinessTrip
           payload.location = payload.destination
           payload.purpose = payload.reason
           if (payload.startTime) payload.startDate = payload.startTime.split(' ')[0]
           if (payload.endTime) payload.endDate = payload.endTime.split(' ')[0]
-      } else if (payload.type === 3) { // FieldWork
+        } else if (payload.type === 3) {
+          // FieldWork
           payload.content = payload.reason
           if (payload.startTime) {
-              const [date, time] = payload.startTime.split(' ')
-              payload.workDate = date
-              payload.startTime = time
+            const [date, time] = payload.startTime.split(' ')
+            payload.workDate = date
+            payload.startTime = time
           }
           if (payload.endTime) {
-              payload.endTime = payload.endTime.split(' ')[1]
+            payload.endTime = payload.endTime.split(' ')[1]
           }
-      } else if (payload.type === 4) { // Leave
+        } else if (payload.type === 4) {
+          // Leave
           if (payload.startTime) {
-              const [date, time] = payload.startTime.split(' ')
-              payload.startDate = date
-              payload.startTime = time
+            const [date, time] = payload.startTime.split(' ')
+            payload.startDate = date
+            payload.startTime = time
           }
-           if (payload.endTime) {
-              const [date, time] = payload.endTime.split(' ')
-              payload.endDate = date
-              payload.endTime = time
+          if (payload.endTime) {
+            const [date, time] = payload.endTime.split(' ')
+            payload.endDate = date
+            payload.endTime = time
           }
+        }
+
+        emit('save', payload)
       }
-      
-      emit('save', payload)
-    }
-  })
-}
+    })
+  }
 </script>

@@ -3,7 +3,11 @@
     <!-- Case 1: Promoted Single Child -->
     <template v-if="getPromotedChild(item)">
       <ElMenuItem
-        :index="isExternalLink(getPromotedChild(item)!) ? undefined : getPromotedChild(item)!.path || getPromotedChild(item)!.meta.title"
+        :index="
+          isExternalLink(getPromotedChild(item)!)
+            ? undefined
+            : getPromotedChild(item)!.path || getPromotedChild(item)!.meta.title
+        "
         :level-item="level + 1"
         @click="goPage(getPromotedChild(item)!)"
       >

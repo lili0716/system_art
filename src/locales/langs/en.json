@@ -48,20 +48,11 @@
   "setting": {
     "menuType": {
       "title": "Menu Layout",
-      "list": [
-        "Vertical",
-        "Horizontal",
-        "Mixed",
-        "Dual"
-      ]
+      "list": ["Vertical", "Horizontal", "Mixed", "Dual"]
     },
     "theme": {
       "title": "Theme Style",
-      "list": [
-        "Light",
-        "Dark",
-        "System"
-      ]
+      "list": ["Light", "Dark", "System"]
     },
     "menu": {
       "title": "Menu Style"
@@ -71,17 +62,11 @@
     },
     "box": {
       "title": "Box Style",
-      "list": [
-        "Border",
-        "Shadow"
-      ]
+      "list": ["Border", "Shadow"]
     },
     "container": {
       "title": "Container Width",
-      "list": [
-        "Full",
-        "Boxed"
-      ]
+      "list": ["Full", "Boxed"]
     },
     "basics": {
       "title": "Basic Config",
@@ -127,14 +112,8 @@
   "notice": {
     "title": "Notice",
     "btnRead": "Mark as read",
-    "bar": [
-      "Notice",
-      "Message",
-      "Todo"
-    ],
-    "text": [
-      "No"
-    ],
+    "bar": ["Notice", "Message", "Todo"],
+    "text": ["No"],
     "viewAll": "View all"
   },
   "worktab": {
@@ -262,7 +241,8 @@
       "user": "User Manage",
       "role": "Role Manage",
       "userCenter": "User Center",
-      "menu": "Menu Manage"
+      "menu": "Menu Manage",
+      "salaryStatistics": "Salary Statistics"
     },
     "attendance": {
       "title": "Attendance",
@@ -271,6 +251,25 @@
       "approval": "Approval Management",
       "rule": "Rule Management",
       "query": "Attendance Query"
+    },
+    "ops": {
+      "title": "Operations Management",
+      "systemLog": "System Logs",
+      "serverMonitor": "Server Monitor"
+    },
+    "personnel": {
+      "title": "Personnel Management",
+      "employee": "Employee Management"
+    },
+    "organization": {
+      "title": "Organization",
+      "dept": "Department Management",
+      "position": "Position Management"
+    },
+    "form": {
+      "title": "Form Management",
+      "application": "Form Application",
+      "approval": "Form Approval"
     }
   },
   "table": {
@@ -309,5 +308,263 @@
     "noData": "----",
     "today": "Today",
     "previousMonth": "Previous Month"
+  },
+  "userCenter": {
+    "subtitle": "Focused on user experience and visual design",
+    "sections": {
+      "basicSettings": "Basic Settings",
+      "changePassword": "Change Password"
+    },
+    "form": {
+      "realName": "Full Name",
+      "nickName": "Nickname",
+      "email": "Email",
+      "mobile": "Mobile",
+      "address": "Address",
+      "description": "Personal Introduction",
+      "sex": "Gender",
+      "sexMale": "Male",
+      "sexFemale": "Female",
+      "sexPlaceholder": "Please select gender"
+    },
+    "password": {
+      "current": "Current Password",
+      "new": "New Password",
+      "confirm": "Confirm New Password"
+    },
+    "actions": {
+      "save": "Save",
+      "edit": "Edit"
+    },
+    "tags": {
+      "title": "Tags",
+      "focusDesign": "Focus on design",
+      "creative": "Creative",
+      "spicy": "Spicy",
+      "longLegs": "Long legs",
+      "sichuanGirl": "Sichuan girl",
+      "inclusive": "Inclusive"
+    },
+    "greeting": {
+      "morning": "Good morning",
+      "lateMorning": "Good morning",
+      "noon": "Good noon",
+      "afternoon": "Good afternoon",
+      "evening": "Good evening",
+      "lateNight": "It's late, go to bed early"
+    },
+    "rules": {
+      "realNameRequired": "Please enter your name",
+      "realNameLength": "Length must be between 2 and 50 characters",
+      "nickNameRequired": "Please enter your nickname",
+      "nickNameLength": "Length must be between 2 and 50 characters",
+      "emailRequired": "Please enter your email",
+      "mobileRequired": "Please enter your mobile number",
+      "addressRequired": "Please enter your address",
+      "sexRequired": "Please select gender"
+    }
+  },
+  "userTable": {
+    "columns": {
+      "index": "No.",
+      "nickName": "Name",
+      "gender": "Gender",
+      "email": "Email",
+      "employeeId": "Employee ID",
+      "position": "Position",
+      "status": "Employment Status",
+      "tenure": "Tenure",
+      "hireDate": "Hire Date",
+      "leaveDate": "Leave Date",
+      "createTime": "Created At",
+      "updateTime": "Updated At",
+      "operation": "Actions"
+    },
+    "units": {
+      "year": "year"
+    },
+    "status": {
+      "employed": "Employed",
+      "left": "Left",
+      "unknown": "Unknown"
+    },
+    "actions": {
+      "view": "View",
+      "edit": "Edit",
+      "delete": "Delete"
+    },
+    "toolbar": {
+      "addUser": "Add User",
+      "newEmployee": "New Employee",
+      "syncData": "Sync Data"
+    },
+    "sync": {
+      "success": "Data synchronized successfully",
+      "failedWithReason": "Data synchronization failed: {msg}",
+      "failedRetry": "Data synchronization failed, please try again"
+    },
+    "messages": {
+      "deleteTitle": "Delete User",
+      "deleteConfirm": "Are you sure you want to delete this user?",
+      "deleteSuccess": "Deleted successfully",
+      "deleteFailed": "Delete failed, please try again"
+    }
+  },
+  "dept": {
+    "title": "Department Management",
+    "list": {
+      "title": "Department List"
+    },
+    "columns": {
+      "name": "Department Name",
+      "code": "Department Code",
+      "leader": "Leader",
+      "employeeCount": "Employees",
+      "sort": "Sort",
+      "status": "Status",
+      "operation": "Actions"
+    },
+    "status": {
+      "enabled": "Enabled",
+      "disabled": "Disabled"
+    },
+    "actions": {
+      "createRoot": "Create Root Department",
+      "refresh": "Refresh",
+      "edit": "Edit",
+      "createChild": "Create Sub Department",
+      "menuPermission": "Menu Permission",
+      "delete": "Delete"
+    },
+    "form": {
+      "parent": "Parent Department",
+      "parentPlaceholder": "As root department",
+      "name": "Department Name",
+      "namePlaceholder": "Please enter department name",
+      "code": "Department Code",
+      "codePlaceholder": "Please enter department code",
+      "leader": "Leader",
+      "leaderPlaceholder": "Please input and select leader",
+      "sort": "Sort",
+      "status": "Status",
+      "description": "Description"
+    },
+    "dialog": {
+      "editTitle": "Edit Department",
+      "createTitle": "Create Department"
+    },
+    "rules": {
+      "nameRequired": "Please enter department name",
+      "codeRequired": "Please enter department code"
+    },
+    "permission": {
+      "title": "Menu Permission Settings"
+    },
+    "messages": {
+      "deleteConfirm": "Are you sure you want to delete this department? If it has sub-departments it cannot be deleted.",
+      "warningTitle": "Warning",
+      "deleteSuccess": "Deleted successfully",
+      "updateSuccess": "Updated successfully",
+      "createSuccess": "Created successfully"
+    }
+  },
+  "serverMonitorPage": {
+    "lastUpdate": "Last update:",
+    "buttons": {
+      "startPolling": "Start Polling",
+      "stopPolling": "Stop Polling",
+      "refresh": "Refresh"
+    },
+    "cards": {
+      "currentServer": "Current Server"
+    },
+    "metrics": {
+      "cpu": "CPU",
+      "ram": "RAM",
+      "swap": "SWAP",
+      "disk": "DISK"
+    },
+    "common": {
+      "usage": "Usage"
+    },
+    "cpu": {
+      "title": "CPU Info",
+      "name": "Name",
+      "physicalCores": "Physical Cores",
+      "logicalCores": "Logical Cores"
+    },
+    "ram": {
+      "title": "Memory Info",
+      "total": "Total Memory",
+      "used": "Used",
+      "free": "Free"
+    },
+    "jvm": {
+      "title": "JVM Info",
+      "version": "Version",
+      "maxMemory": "Max Memory",
+      "usedMemory": "Used Memory",
+      "uptime": "Uptime"
+    },
+    "disk": {
+      "title": "Disk Details",
+      "mount": "Mount",
+      "type": "File System",
+      "total": "Total",
+      "used": "Used",
+      "free": "Free"
+    }
+  },
+  "systemLog": {
+    "toolbar": {
+      "exportExcel": "Export Excel"
+    },
+    "dialog": {
+      "title": "Log Detail"
+    },
+    "detail": {
+      "requestTime": "Request Time",
+      "employeeId": "Employee ID",
+      "nickName": "User Name",
+      "method": "Method",
+      "statusCode": "Status Code",
+      "uri": "Request URI",
+      "duration": "Duration",
+      "ip": "IP Address",
+      "requestParams": "Request Params",
+      "responseBody": "Response Body"
+    },
+    "search": {
+      "dateRange": "Time Range",
+      "nickName": "User Name",
+      "nickNamePlaceholder": "Please enter user name",
+      "employeeId": "Employee ID",
+      "employeeIdPlaceholder": "Please enter employee ID",
+      "method": "Method",
+      "methodPlaceholder": "All",
+      "uri": "Request URI",
+      "uriPlaceholder": "Please enter request path"
+    },
+    "table": {
+      "requestTime": "Request Time",
+      "employeeId": "Employee ID",
+      "nickName": "User Name",
+      "method": "Method",
+      "uri": "Request URI",
+      "requestParams": "Request Params",
+      "statusCode": "Status Code",
+      "duration": "Duration",
+      "ip": "IP Address",
+      "operation": "Actions",
+      "detail": "Detail",
+      "detailTitle": "View Detail"
+    },
+    "export": {
+      "filenamePrefix": "SystemLog"
+    },
+    "messages": {
+      "exportSuccess": "Export succeeded",
+      "exportFailed": "Export failed"
+    }
   }
 }

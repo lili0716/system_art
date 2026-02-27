@@ -241,7 +241,8 @@
       "user": "用户管理",
       "role": "角色管理",
       "userCenter": "个人中心",
-      "menu": "菜单管理"
+      "menu": "菜单管理",
+      "salaryStatistics": "薪酬统计"
     },
     "attendance": {
       "title": "考勤管理",
@@ -255,6 +256,20 @@
       "title": "运维管理",
       "systemLog": "系统日志",
       "serverMonitor": "服务器管理"
+    },
+    "personnel": {
+      "title": "人事管理",
+      "employee": "员工管理"
+    },
+    "organization": {
+      "title": "组织架构",
+      "dept": "部门管理",
+      "position": "职位管理"
+    },
+    "form": {
+      "title": "表单管理",
+      "application": "表单申请",
+      "approval": "表单审批"
     }
   },
   "table": {
@@ -293,5 +308,263 @@
     "noData": "----",
     "today": "今天",
     "previousMonth": "上一月"
+  },
+  "userCenter": {
+    "subtitle": "专注于用户体验跟视觉设计",
+    "sections": {
+      "basicSettings": "基本设置",
+      "changePassword": "更改密码"
+    },
+    "form": {
+      "realName": "姓名",
+      "nickName": "昵称",
+      "email": "邮箱",
+      "mobile": "手机",
+      "address": "地址",
+      "description": "个人介绍",
+      "sex": "性别",
+      "sexMale": "男",
+      "sexFemale": "女",
+      "sexPlaceholder": "请选择性别"
+    },
+    "password": {
+      "current": "当前密码",
+      "new": "新密码",
+      "confirm": "确认新密码"
+    },
+    "actions": {
+      "save": "保存",
+      "edit": "编辑"
+    },
+    "tags": {
+      "title": "标签",
+      "focusDesign": "专注设计",
+      "creative": "很有想法",
+      "spicy": "辣~",
+      "longLegs": "大长腿",
+      "sichuanGirl": "川妹子",
+      "inclusive": "海纳百川"
+    },
+    "greeting": {
+      "morning": "早上好",
+      "lateMorning": "上午好",
+      "noon": "中午好",
+      "afternoon": "下午好",
+      "evening": "晚上好",
+      "lateNight": "很晚了，早点睡"
+    },
+    "rules": {
+      "realNameRequired": "请输入姓名",
+      "realNameLength": "长度在 2 到 50 个字符",
+      "nickNameRequired": "请输入昵称",
+      "nickNameLength": "长度在 2 到 50 个字符",
+      "emailRequired": "请输入邮箱",
+      "mobileRequired": "请输入手机号码",
+      "addressRequired": "请输入地址",
+      "sexRequired": "请选择性别"
+    }
+  },
+  "userTable": {
+    "columns": {
+      "index": "序号",
+      "nickName": "姓名",
+      "gender": "性别",
+      "email": "邮箱",
+      "employeeId": "工号",
+      "position": "职位",
+      "status": "在职状态",
+      "tenure": "在职时长",
+      "hireDate": "入职时间",
+      "leaveDate": "离职时间",
+      "createTime": "创建日期",
+      "updateTime": "更新时间",
+      "operation": "操作"
+    },
+    "units": {
+      "year": "年"
+    },
+    "status": {
+      "employed": "在职",
+      "left": "离职",
+      "unknown": "未知"
+    },
+    "actions": {
+      "view": "查看",
+      "edit": "编辑",
+      "delete": "删除"
+    },
+    "toolbar": {
+      "addUser": "新增用户",
+      "newEmployee": "新员工入职",
+      "syncData": "数据同步"
+    },
+    "sync": {
+      "success": "数据同步成功",
+      "failedWithReason": "数据同步失败: {msg}",
+      "failedRetry": "数据同步失败，请重试"
+    },
+    "messages": {
+      "deleteTitle": "删除用户",
+      "deleteConfirm": "确定要删除该用户吗？",
+      "deleteSuccess": "删除成功",
+      "deleteFailed": "删除失败，请重试"
+    }
+  },
+  "dept": {
+    "title": "部门管理",
+    "list": {
+      "title": "部门列表"
+    },
+    "columns": {
+      "name": "部门名称",
+      "code": "部门编码",
+      "leader": "负责人",
+      "employeeCount": "人数",
+      "sort": "排序",
+      "status": "状态",
+      "operation": "操作"
+    },
+    "status": {
+      "enabled": "启用",
+      "disabled": "禁用"
+    },
+    "actions": {
+      "createRoot": "新增一级部门",
+      "refresh": "刷新",
+      "edit": "编辑",
+      "createChild": "新增下级",
+      "menuPermission": "菜单权限",
+      "delete": "删除"
+    },
+    "form": {
+      "parent": "上级部门",
+      "parentPlaceholder": "作为一级部门",
+      "name": "部门名称",
+      "namePlaceholder": "请输入部门名称",
+      "code": "部门编码",
+      "codePlaceholder": "请输入部门编码",
+      "leader": "负责人",
+      "leaderPlaceholder": "请输入并选择负责人",
+      "sort": "排序",
+      "status": "状态",
+      "description": "描述"
+    },
+    "dialog": {
+      "editTitle": "编辑部门",
+      "createTitle": "新增部门"
+    },
+    "rules": {
+      "nameRequired": "请输入部门名称",
+      "codeRequired": "请输入部门编码"
+    },
+    "permission": {
+      "title": "菜单权限配置"
+    },
+    "messages": {
+      "deleteConfirm": "确定要删除该部门吗? 如果包含下级部门将无法删除。",
+      "warningTitle": "警告",
+      "deleteSuccess": "删除成功",
+      "updateSuccess": "更新成功",
+      "createSuccess": "创建成功"
+    }
+  },
+  "serverMonitorPage": {
+    "lastUpdate": "最后更新:",
+    "buttons": {
+      "startPolling": "启动轮询",
+      "stopPolling": "暂停轮询",
+      "refresh": "刷新"
+    },
+    "cards": {
+      "currentServer": "当前服务器"
+    },
+    "metrics": {
+      "cpu": "CPU",
+      "ram": "RAM",
+      "swap": "SWAP",
+      "disk": "DISK"
+    },
+    "common": {
+      "usage": "使用率"
+    },
+    "cpu": {
+      "title": "CPU 信息",
+      "name": "名称",
+      "physicalCores": "物理核心",
+      "logicalCores": "逻辑核心"
+    },
+    "ram": {
+      "title": "内存信息",
+      "total": "总内存",
+      "used": "已使用",
+      "free": "可用"
+    },
+    "jvm": {
+      "title": "JVM 信息",
+      "version": "版本",
+      "maxMemory": "最大内存",
+      "usedMemory": "已用内存",
+      "uptime": "运行时间"
+    },
+    "disk": {
+      "title": "磁盘详情",
+      "mount": "挂载点",
+      "type": "文件系统",
+      "total": "总容量",
+      "used": "已使用",
+      "free": "可用"
+    }
+  },
+  "systemLog": {
+    "toolbar": {
+      "exportExcel": "导出 Excel"
+    },
+    "dialog": {
+      "title": "日志详情"
+    },
+    "detail": {
+      "requestTime": "请求时间",
+      "employeeId": "用户工号",
+      "nickName": "用户姓名",
+      "method": "请求方法",
+      "statusCode": "状态码",
+      "uri": "请求 URI",
+      "duration": "耗时",
+      "ip": "IP 地址",
+      "requestParams": "请求参数",
+      "responseBody": "响应内容"
+    },
+    "search": {
+      "dateRange": "时间范围",
+      "nickName": "用户姓名",
+      "nickNamePlaceholder": "请输入用户姓名",
+      "employeeId": "工号",
+      "employeeIdPlaceholder": "请输入工号",
+      "method": "请求方法",
+      "methodPlaceholder": "全部",
+      "uri": "请求 URI",
+      "uriPlaceholder": "请输入请求路径"
+    },
+    "table": {
+      "requestTime": "请求时间",
+      "employeeId": "工号",
+      "nickName": "用户姓名",
+      "method": "方法",
+      "uri": "请求 URI",
+      "requestParams": "请求参数",
+      "statusCode": "状态码",
+      "duration": "耗时",
+      "ip": "IP 地址",
+      "operation": "操作",
+      "detail": "详情",
+      "detailTitle": "查看详情"
+    },
+    "export": {
+      "filenamePrefix": "系统日志"
+    },
+    "messages": {
+      "exportSuccess": "导出成功",
+      "exportFailed": "导出失败"
+    }
   }
 }

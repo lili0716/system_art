@@ -4,14 +4,11 @@
     <CardList></CardList>
 
     <ElRow :gutter="20">
-      <ElCol :sm="24" :md="12" :lg="12">
+      <ElCol :sm="24" :md="12" :lg="18">
         <Calendar />
       </ElCol>
       <ElCol :sm="24" :md="12" :lg="6">
         <Dynamic />
-      </ElCol>
-      <ElCol :sm="24" :md="12" :lg="6">
-        <TodoList />
       </ElCol>
     </ElRow>
   </div>
@@ -20,7 +17,6 @@
 <script setup lang="ts">
   import CardList from './modules/card-list.vue'
   import Dynamic from './modules/dynamic-stats.vue'
-  import TodoList from './modules/todo-list.vue'
   import Calendar from './modules/calendar.vue'
 
   defineOptions({ name: 'Console' })

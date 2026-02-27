@@ -24,7 +24,7 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, computed, watch } from 'vue'
+  import { ref, watch } from 'vue'
   import request from '@/utils/http'
   import { ElSelect, ElOption } from 'element-plus'
 
@@ -118,7 +118,7 @@
           ...props.apiParams
         }
       })
-      
+
       // 处理不同的返回格式
       if (Array.isArray(res)) {
         options.value = res
@@ -158,5 +158,4 @@
   )
 </script>
 
-<style scoped>
-</style>
+<style scoped></style>

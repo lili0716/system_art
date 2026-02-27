@@ -172,7 +172,7 @@ export const useUserStore = defineStore(
 
       // Call backend logout
       import('@/api/auth').then(({ fetchLogout }) => {
-        fetchLogout().catch(() => { })
+        fetchLogout().catch(() => {})
       })
 
       router.push({

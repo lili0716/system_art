@@ -49,6 +49,16 @@ export const attendanceRoutes: AppRouteRecord = {
         keepAlive: true,
         roles: ['R_SUPER', 'R_ADMIN']
       }
+    },
+    {
+      path: 'shift-type',
+      name: 'ShiftType',
+      component: '/attendance/shift-type',
+      meta: {
+        title: '班别管理',
+        keepAlive: true,
+        roles: ['R_SUPER', 'R_ADMIN']
+      }
     }
   ]
 }

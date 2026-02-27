@@ -5,10 +5,20 @@
     <div class="search-wrapper">
       <ElForm :model="searchForm" inline>
         <ElFormItem label="姓名">
-          <ElInput v-model="searchForm.nickName" placeholder="请输入姓名" clearable @keyup.enter="handleSearch" />
+          <ElInput
+            v-model="searchForm.nickName"
+            placeholder="请输入姓名"
+            clearable
+            @keyup.enter="handleSearch"
+          />
         </ElFormItem>
         <ElFormItem label="工号">
-          <ElInput v-model="searchForm.employeeId" placeholder="请输入工号" clearable @keyup.enter="handleSearch" />
+          <ElInput
+            v-model="searchForm.employeeId"
+            placeholder="请输入工号"
+            clearable
+            @keyup.enter="handleSearch"
+          />
         </ElFormItem>
         <ElFormItem>
           <ElButton type="primary" @click="handleSearch">查询</ElButton>
@@ -44,7 +54,7 @@
   import { useTable } from '@/hooks/core/useTable'
   import { fetchGetUserList } from '@/api/system-manage'
   import SalaryDialog from './modules/salary-dialog.vue'
-  
+
   defineOptions({ name: 'Salary' })
 
   type UserListItem = Api.SystemManage.UserListItem
@@ -110,8 +120,8 @@
 
   const resetSearch = () => {
     searchForm.value = {
-        nickName: undefined,
-        employeeId: undefined
+      nickName: undefined,
+      employeeId: undefined
     }
     resetSearchParams()
   }
@@ -137,10 +147,10 @@
 </script>
 
 <style scoped>
-.search-wrapper {
-    background-color: #fff;
-    padding: 18px 18px 0 18px;
+  .search-wrapper {
+    padding: 18px 18px 0;
     margin-bottom: 15px;
+    background-color: #fff;
     border-radius: 4px;
-}
+  }
 </style>

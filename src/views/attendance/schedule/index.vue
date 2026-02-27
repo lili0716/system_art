@@ -2,11 +2,7 @@
 <template>
   <div class="art-full-height">
     <ElCard class="art-table-card" shadow="never">
-      <ArtTableHeader
-        :loading="loading"
-        :show-search-bar="false"
-        @refresh="handleRefresh"
-      >
+      <ArtTableHeader :loading="loading" :show-search-bar="false" @refresh="handleRefresh">
         <template #left>
           <ElSpace wrap>
             <!-- 月份切换 -->
@@ -17,18 +13,36 @@
             </div>
 
             <!-- 部门筛选 -->
-            <ElSelect
+            <ElTreeSelect
               v-model="selectedDeptId"
+              :data="deptOptions"
+              :props="{ label: 'name', value: 'id' }"
+              check-strictly
               placeholder="全部部门"
               clearable
               style="width: 150px"
               @change="handleDeptChange"
+            />
+
+            <!-- 员工筛选 -->
+            <ElSelect
+              v-model="selectedEmployeeIds"
+              multiple
+              filterable
+              remote
+              reserve-keyword
+              placeholder="输入工号或姓名搜索"
+              :remote-method="handleEmployeeSearch"
+              :loading="employeeLoading"
+              clearable
+              style="width: 250px"
+              @change="handleEmployeeChange"
             >
               <ElOption
-                v-for="dept in deptOptions"
-                :key="dept.id"
-                :label="dept.name"
-                :value="dept.id"
+                v-for="item in employeeOptions"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
               />
             </ElSelect>
 
@@ -37,17 +51,26 @@
               <el-icon><Refresh /></el-icon>
               生成本月排班
             </ElButton>
+
+            <!-- 导入排班按钮 -->
+            <ElUpload
+              action=""
+              :show-file-list="false"
+              :before-upload="handleUpload"
+              accept=".xls,.xlsx"
+            >
+              <ElButton type="warning" :loading="uploading" v-ripple>
+                <el-icon><Upload /></el-icon>
+                导入排班
+              </ElButton>
+            </ElUpload>
           </ElSpace>
         </template>
 
         <!-- 右侧班次图例 -->
         <template #right>
           <ElSpace wrap>
-            <div
-              v-for="type in shiftTypes"
-              :key="type.id"
-              class="legend-item"
-            >
+            <div v-for="type in shiftTypes" :key="type.id" class="legend-item">
               <span class="legend-dot" :style="{ backgroundColor: type.color }"></span>
               <span class="legend-name">{{ type.name }}</span>
             </div>
@@ -58,7 +81,7 @@
       <!-- 排班表格 -->
       <ArtTable
         :loading="loading"
-        :data="(data as any[])"
+        :data="data as any[]"
         :columns="scheduleColumns"
         :pagination="pagination"
         @pagination:size-change="handleSizeChange"
@@ -89,7 +112,9 @@
               {{ type.isRest ? '休息日' : `${type.workStart} - ${type.workEnd}` }}
             </span>
           </div>
-          <el-icon v-if="activeCell?.currentShiftTypeId === type.id" color="#409eff"><Check /></el-icon>
+          <el-icon v-if="activeCell?.currentShiftTypeId === type.id" color="#409eff"
+            ><Check
+          /></el-icon>
         </div>
       </div>
       <template #footer>
@@ -101,15 +126,16 @@
 
 <script setup lang="ts">
   import { ref, computed, h, onMounted } from 'vue'
-  import { ArrowLeft, ArrowRight, Refresh, Check } from '@element-plus/icons-vue'
+  import { ArrowLeft, ArrowRight, Refresh, Check, Upload } from '@element-plus/icons-vue'
   import { ElMessage } from 'element-plus'
   import { useTable } from '@/hooks/core/useTable'
   import {
     getMonthSchedule,
     generateMonthSchedule,
     updateScheduleCell,
+    importSchedule
   } from '@/api/schedule'
-  import { getDepartmentOptions } from '@/api/system-manage'
+  import { getDepartmentOptions, searchEmployees } from '@/api/system-manage'
   // import ArtButtonTable from '@/components/core/forms/art-button-table/index.vue'
 
   defineOptions({ name: 'AttendanceSchedule' })
@@ -123,6 +149,42 @@
   const selectedDeptId = ref<number | undefined>(undefined)
   const deptOptions = ref<any[]>([])
 
+  // ===== 员工筛选 =====
+  const selectedEmployeeIds = ref<string[]>([])
+  const employeeOptions = ref<Array<{ label: string; value: string }>>([])
+  const employeeLoading = ref(false)
+
+  const handleEmployeeSearch = async (query: string) => {
+    if (query.length < 1) {
+      employeeOptions.value = []
+      return
+    }
+    employeeLoading.value = true
+    try {
+      const res: any = await searchEmployees(query)
+      if (res && res.records) {
+        employeeOptions.value = res.records.map((item: any) => ({
+          label: `${item.nickName} (${item.employeeId})`,
+          value: item.employeeId
+        }))
+      } else {
+        employeeOptions.value = []
+      }
+    } catch (error) {
+      console.error('搜索员工失败', error)
+    } finally {
+      employeeLoading.value = false
+    }
+  }
+
+  function handleEmployeeChange() {
+    ;(searchParams as any).employeeIds = selectedEmployeeIds.value.length
+      ? selectedEmployeeIds.value.join(',')
+      : undefined
+    ;(searchParams as any).page = 1
+    getData()
+  }
+
   // ===== 班次类型（从接口返回中提取） =====
   const shiftTypes = ref<any[]>([])
   const daysInMonth = ref(30)
@@ -131,7 +193,11 @@
 
   // ===== 调班弹窗 =====
   const shiftDialogVisible = ref(false)
-  interface ActiveCell { emp: any; day: number; currentShiftTypeId: number | undefined }
+  interface ActiveCell {
+    emp: any
+    day: number
+    currentShiftTypeId: number | undefined
+  }
   const activeCell = ref<ActiveCell | null>(null)
 
   const generating = ref(false)
@@ -145,14 +211,20 @@
   }
   function isToday(day: number) {
     const t = new Date()
-    return t.getFullYear() === currentYear.value && t.getMonth() + 1 === currentMonth.value && t.getDate() === day
+    return (
+      t.getFullYear() === currentYear.value &&
+      t.getMonth() + 1 === currentMonth.value &&
+      t.getDate() === day
+    )
   }
   function getWeekday(day: number) {
-    return ['日', '一', '二', '三', '四', '五', '六'][new Date(currentYear.value, currentMonth.value - 1, day).getDay()]
+    return ['日', '一', '二', '三', '四', '五', '六'][
+      new Date(currentYear.value, currentMonth.value - 1, day).getDay()
+    ]
   }
   function getShiftType(employeeId: string, day: number) {
     const id = scheduleMap.value[employeeId]?.[day]
-    return id ? shiftTypes.value.find(t => t.id === id) : null
+    return id ? shiftTypes.value.find((t) => t.id === id) : null
   }
 
   // ===== 响应式动态列（数据返回后自动重建）=====
@@ -170,15 +242,22 @@
         className: isRed ? 'col-holiday' : isTodayDay ? 'col-today' : '',
         formatter: (row: any) => {
           const st = getShiftType(row.employeeId, day)
-          return h('div', {
-            class: 'shift-cell',
-            onClick: () => openShiftDialog(row, day)
-          }, st
-            ? h('span', {
-                class: 'shift-tag',
-                style: { backgroundColor: st.color }
-              }, st.isRest ? '休' : st.name.slice(0, 2))
-            : h('span', { class: 'shift-empty' }, '-')
+          return h(
+            'div',
+            {
+              class: 'shift-cell',
+              onClick: () => openShiftDialog(row, day)
+            },
+            st
+              ? h(
+                  'span',
+                  {
+                    class: 'shift-tag',
+                    style: { backgroundColor: st.color }
+                  },
+                  st.isRest ? '休' : st.name.slice(0, 2)
+                )
+              : h('span', { class: 'shift-empty' }, '-')
           )
         }
       }
@@ -190,10 +269,11 @@
         width: 90,
         fixed: 'left' as const,
         align: 'center' as const,
-        formatter: (row: any) => h('div', { class: 'emp-cell' }, [
-          h('div', { class: 'emp-name' }, row.nickName),
-          h('div', { class: 'emp-dept' }, row.departmentName || '')
-        ])
+        formatter: (row: any) =>
+          h('div', { class: 'emp-cell' }, [
+            h('div', { class: 'emp-name' }, row.nickName),
+            h('div', { class: 'emp-dept' }, row.departmentName || '')
+          ])
       },
       ...dayCols
     ]
@@ -206,7 +286,8 @@
       params.month,
       params.deptId,
       params.page,
-      params.pageSize
+      params.pageSize,
+      params.employeeIds
     )
   }
 
@@ -227,11 +308,12 @@
         year: currentYear.value,
         month: currentMonth.value,
         deptId: undefined as number | undefined,
+        employeeIds: undefined as string | undefined,
         page: 1,
         pageSize: 20
       },
       paginationKey: { current: 'page', size: 'pageSize' },
-      immediate: false,
+      immediate: false
     },
     transform: {
       responseAdapter: (response: any) => {
@@ -260,13 +342,21 @@
 
   // ===== 月份切换 =====
   function prevMonth() {
-    if (currentMonth.value === 1) { currentMonth.value = 12; currentYear.value -= 1 }
-    else { currentMonth.value -= 1 }
+    if (currentMonth.value === 1) {
+      currentMonth.value = 12
+      currentYear.value -= 1
+    } else {
+      currentMonth.value -= 1
+    }
     updateMonthParams()
   }
   function nextMonth() {
-    if (currentMonth.value === 12) { currentMonth.value = 1; currentYear.value += 1 }
-    else { currentMonth.value += 1 }
+    if (currentMonth.value === 12) {
+      currentMonth.value = 1
+      currentYear.value += 1
+    } else {
+      currentMonth.value += 1
+    }
     updateMonthParams()
   }
   function updateMonthParams() {
@@ -293,6 +383,22 @@
     } finally {
       generating.value = false
     }
+  }
+
+  // ===== 导入排班 =====
+  const uploading = ref(false)
+  const handleUpload = async (file: File) => {
+    uploading.value = true
+    try {
+      const res = await importSchedule(file, currentYear.value, currentMonth.value)
+      ElMessage.success(res?.msg || '导入成功')
+      refreshData()
+    } catch {
+      // API error handler will show message mostly
+    } finally {
+      uploading.value = false
+    }
+    return false // 阻止默认上传
   }
 
   // ===== 调班弹窗 =====
@@ -326,9 +432,11 @@
   // ===== 加载部门选项 =====
   async function loadDeptOptions() {
     try {
-      const res = await getDepartmentOptions()
-      deptOptions.value = res?.data || res || []
-    } catch (e) { console.error(e) }
+      const res: any = await getDepartmentOptions()
+      deptOptions.value = res?.nodes || res?.data || res || []
+    } catch (e) {
+      console.error(e)
+    }
   }
 
   onMounted(async () => {
@@ -341,31 +449,34 @@
   /* 月份导航 */
   .month-nav {
     display: flex;
-    align-items: center;
     gap: 8px;
+    align-items: center;
   }
+
   .month-label {
+    min-width: 110px;
     font-size: 15px;
     font-weight: 700;
-    min-width: 110px;
-    text-align: center;
     color: var(--el-text-color-primary);
+    text-align: center;
   }
 
   /* 班次图例 */
   .legend-item {
     display: flex;
-    align-items: center;
     gap: 5px;
+    align-items: center;
     font-size: 12px;
     color: var(--el-text-color-secondary);
   }
+
   .legend-dot {
+    flex-shrink: 0;
     width: 10px;
     height: 10px;
     border-radius: 50%;
-    flex-shrink: 0;
   }
+
   .legend-name {
     white-space: nowrap;
   }
@@ -373,8 +484,18 @@
   /* 员工列 */
   .emp-cell {
     line-height: 1.4;
-    .emp-name { font-size: 13px; font-weight: 500; color: var(--el-text-color-primary); }
-    .emp-dept { font-size: 11px; color: var(--el-text-color-secondary); margin-top: 2px; }
+
+    .emp-name {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--el-text-color-primary);
+    }
+
+    .emp-dept {
+      margin-top: 2px;
+      font-size: 11px;
+      color: var(--el-text-color-secondary);
+    }
   }
 
   /* 班次格 */
@@ -386,24 +507,29 @@
     min-height: 48px;
     cursor: pointer;
     transition: background 0.15s;
-    &:hover { background: rgba(64, 158, 255, 0.06); }
+
+    &:hover {
+      background: rgb(64 158 255 / 6%);
+    }
   }
+
   .shift-tag {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     min-width: 40px;
     height: 28px;
-    border-radius: 6px;
-    color: #fff;
     font-size: 12px;
     font-weight: 700;
+    color: #fff;
     letter-spacing: 0.5px;
     user-select: none;
+    border-radius: 6px;
   }
+
   .shift-empty {
-    color: var(--el-text-color-placeholder);
     font-size: 13px;
+    color: var(--el-text-color-placeholder);
     user-select: none;
   }
 
@@ -413,41 +539,76 @@
     flex-direction: column;
     gap: 8px;
   }
+
   .shift-option {
     display: flex;
-    align-items: center;
     gap: 12px;
+    align-items: center;
     padding: 10px 14px;
-    border-radius: 8px;
     cursor: pointer;
-    border: 2px solid transparent;
     background: var(--el-fill-color-light);
+    border: 2px solid transparent;
+    border-radius: 8px;
     transition: all 0.15s;
-    &:hover { border-color: var(--el-border-color); background: var(--el-fill-color); }
-    &.is-active { border-color: var(--el-color-primary); background: rgba(64, 158, 255, 0.08); }
+
+    &:hover {
+      background: var(--el-fill-color);
+      border-color: var(--el-border-color);
+    }
+
+    &.is-active {
+      background: rgb(64 158 255 / 8%);
+      border-color: var(--el-color-primary);
+    }
   }
+
   .shift-opt-dot {
+    flex-shrink: 0;
     width: 14px;
     height: 14px;
     border-radius: 50%;
-    flex-shrink: 0;
-  }
-  .shift-opt-info {
-    flex: 1;
-    .shift-opt-name { font-size: 14px; font-weight: 600; display: block; color: var(--el-text-color-primary); }
-    .shift-opt-time { font-size: 12px; color: var(--el-text-color-secondary); display: block; margin-top: 2px; }
   }
 
-  :deep(.col-holiday .cell) { color: #f56c6c; }
-  :deep(.col-today .cell) { color: #409eff; font-weight: 700; }
+  .shift-opt-info {
+    flex: 1;
+
+    .shift-opt-name {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--el-text-color-primary);
+    }
+
+    .shift-opt-time {
+      display: block;
+      margin-top: 2px;
+      font-size: 12px;
+      color: var(--el-text-color-secondary);
+    }
+  }
+
+  :deep(.col-holiday .cell) {
+    color: #f56c6c;
+  }
+
+  :deep(.col-today .cell) {
+    font-weight: 700;
+    color: #409eff;
+  }
+
   /* td padding 正常 */
-  :deep(.el-table td) { padding: 8px 0; }
-  :deep(.el-table th) { padding: 10px 0; white-space: pre-line; font-size: 13px; line-height: 1.5; }
-  :deep(.el-table .cell) { padding: 0 4px; }
-  /* 员工列定宽调大字体 */
-  .emp-cell {
+  :deep(.el-table td) {
+    padding: 8px 0;
+  }
+
+  :deep(.el-table th) {
+    padding: 10px 0;
+    font-size: 13px;
     line-height: 1.5;
-    .emp-name { font-size: 14px; font-weight: 600; color: var(--el-text-color-primary); }
-    .emp-dept { font-size: 12px; color: var(--el-text-color-secondary); margin-top: 3px; }
+    white-space: pre-line;
+  }
+
+  :deep(.el-table .cell) {
+    padding: 0 4px;
   }
 </style>

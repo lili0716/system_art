@@ -80,18 +80,23 @@
   const dialogVisible = ref(false)
   const isView = ref(true)
   const currentForm = ref({})
-  const dialogTitle = computed(() => isView.value ? '申请详情' : '新增申请')
+  const dialogTitle = computed(() => (isView.value ? '申请详情' : '新增申请'))
 
   /**
    * 获取表单类型样式
    */
   const getFormTypeType = (type: number) => {
     switch (type) {
-      case 1: return ''
-      case 2: return 'warning'
-      case 3: return 'info'
-      case 4: return 'danger'
-      default: return ''
+      case 1:
+        return ''
+      case 2:
+        return 'warning'
+      case 3:
+        return 'info'
+      case 4:
+        return 'danger'
+      default:
+        return ''
     }
   }
 
@@ -100,11 +105,16 @@
    */
   const getFormTypeName = (type: number) => {
     switch (type) {
-      case 1: return '补打卡'
-      case 2: return '出差'
-      case 3: return '外勤'
-      case 4: return '请假'
-      default: return '未知'
+      case 1:
+        return '补打卡'
+      case 2:
+        return '出差'
+      case 3:
+        return '外勤'
+      case 4:
+        return '请假'
+      default:
+        return '未知'
     }
   }
 
@@ -113,10 +123,14 @@
    */
   const getStatusType = (status: number) => {
     switch (status) {
-      case 0: return 'warning'
-      case 1: return 'success'
-      case 2: return 'danger'
-      default: return 'info'
+      case 0:
+        return 'warning'
+      case 1:
+        return 'success'
+      case 2:
+        return 'danger'
+      default:
+        return 'info'
     }
   }
 
@@ -125,10 +139,14 @@
    */
   const getStatusName = (status: number) => {
     switch (status) {
-      case 0: return '待审批'
-      case 1: return '已审批'
-      case 2: return '已拒绝'
-      default: return '未知'
+      case 0:
+        return '待审批'
+      case 1:
+        return '已审批'
+      case 2:
+        return '已拒绝'
+      default:
+        return '未知'
     }
   }
 
@@ -197,7 +215,7 @@
           minWidth: 120,
           align: 'center',
           formatter: (row) => {
-            return row.approver ? (row.approver.nickName || row.approver.username) : '-'
+            return row.approver ? row.approver.nickName || row.approver.username : '-'
           }
         },
         {
@@ -220,7 +238,7 @@
                 icon: 'ri:eye-line'
               }
             ]
-            
+
             if (row.status === 0) {
               items.push({
                 key: 'revoke',
@@ -229,7 +247,7 @@
                 color: '#f56c6c'
               })
             }
-            
+
             return h('div', [
               h(ArtButtonMore, {
                 list: items,

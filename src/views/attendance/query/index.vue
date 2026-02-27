@@ -42,33 +42,46 @@
     </ElCard>
 
     <!-- 详情对话框 -->
-    <el-dialog
-      v-model="detailDialogVisible"
-      title="考勤详情"
-      width="600px"
-      destroy-on-close
-    >
+    <el-dialog v-model="detailDialogVisible" title="考勤详情" width="600px" destroy-on-close>
       <div v-loading="detailLoading" class="detail-content">
         <el-descriptions :column="2" border>
-          <el-descriptions-item label="员工姓名">{{ detailData.employeeName }}</el-descriptions-item>
+          <el-descriptions-item label="员工姓名">{{
+            detailData.employeeName
+          }}</el-descriptions-item>
           <el-descriptions-item label="工号">{{ detailData.employeeId }}</el-descriptions-item>
-          <el-descriptions-item label="部门">{{ detailData.departmentName || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="部门">{{
+            detailData.departmentName || '-'
+          }}</el-descriptions-item>
           <el-descriptions-item label="日期">{{ detailData.recordDate }}</el-descriptions-item>
-          <el-descriptions-item label="上班时间">{{ detailData.workInTime || '-' }}</el-descriptions-item>
-          <el-descriptions-item label="下班时间">{{ detailData.workOutTime || '-' }}</el-descriptions-item>
-          <el-descriptions-item label="实际工时">{{ detailData.actualWorkHours?.toFixed(1) || '0' }} 小时</el-descriptions-item>
+          <el-descriptions-item label="上班时间">{{
+            detailData.workInTime || '-'
+          }}</el-descriptions-item>
+          <el-descriptions-item label="下班时间">{{
+            detailData.workOutTime || '-'
+          }}</el-descriptions-item>
+          <el-descriptions-item label="实际工时"
+            >{{ detailData.actualWorkHours?.toFixed(1) || '0' }} 小时</el-descriptions-item
+          >
           <el-descriptions-item label="考勤状态">
             <el-tag :type="getStatusType(detailData.status)">{{ detailData.statusText }}</el-tag>
           </el-descriptions-item>
-          <el-descriptions-item label="迟到分钟数">{{ detailData.lateMinutes || 0 }} 分钟</el-descriptions-item>
-          <el-descriptions-item label="早退分钟数">{{ detailData.earlyLeaveMinutes || 0 }} 分钟</el-descriptions-item>
+          <el-descriptions-item label="迟到分钟数"
+            >{{ detailData.lateMinutes || 0 }} 分钟</el-descriptions-item
+          >
+          <el-descriptions-item label="早退分钟数"
+            >{{ detailData.earlyLeaveMinutes || 0 }} 分钟</el-descriptions-item
+          >
           <el-descriptions-item label="是否已补卡">
             <el-tag :type="detailData.isCorrected ? 'success' : 'info'">
               {{ detailData.isCorrected ? '是' : '否' }}
             </el-tag>
           </el-descriptions-item>
-          <el-descriptions-item label="补卡次数">{{ detailData.correctionCount || 0 }} 次</el-descriptions-item>
-          <el-descriptions-item :span="2" label="备注">{{ detailData.displayRemark || detailData.remark || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="补卡次数"
+            >{{ detailData.correctionCount || 0 }} 次</el-descriptions-item
+          >
+          <el-descriptions-item :span="2" label="备注">{{
+            detailData.displayRemark || detailData.remark || '-'
+          }}</el-descriptions-item>
         </el-descriptions>
 
         <!-- 异常记录 -->
@@ -102,10 +115,10 @@
 
 <script setup lang="ts">
   import { useTable } from '@/hooks/core/useTable'
-  import { 
-    queryAttendanceRecords, 
-    getAttendanceRecordDetail, 
-    exportAttendanceRecords 
+  import {
+    queryAttendanceRecords,
+    getAttendanceRecordDetail,
+    exportAttendanceRecords
   } from '@/api/system-manage'
   import AttendanceSearch from './modules/attendance-search.vue'
   import { ElTag, ElMessage } from 'element-plus'
@@ -257,12 +270,18 @@
    */
   function getStatusType(status: number): 'success' | 'warning' | 'danger' | 'primary' | 'info' {
     switch (status) {
-      case 0: return 'success'   // 正常
-      case 1: return 'warning'   // 迟到
-      case 2: return 'warning'   // 早退
-      case 3: return 'danger'    // 缺勤
-      case 4: return 'primary'   // 加班
-      default: return 'info'
+      case 0:
+        return 'success' // 正常
+      case 1:
+        return 'warning' // 迟到
+      case 2:
+        return 'warning' // 早退
+      case 3:
+        return 'danger' // 缺勤
+      case 4:
+        return 'primary' // 加班
+      default:
+        return 'info'
     }
   }
 
@@ -272,7 +291,7 @@
   async function handleViewDetail(row: any) {
     detailDialogVisible.value = true
     detailLoading.value = true
-    
+
     try {
       const res: any = await getAttendanceRecordDetail(row.id)
       detailData.value = res
@@ -292,10 +311,10 @@
     try {
       const { daterange, ...filtersParams } = searchForm.value
       const [startDate, endDate] = Array.isArray(daterange) ? daterange : [null, null]
-      
+
       const params: any = { ...filtersParams, startDate, endDate }
       // 过滤空值
-      Object.keys(params).forEach(key => {
+      Object.keys(params).forEach((key) => {
         if (params[key] === null || params[key] === '' || params[key] === undefined) {
           delete params[key]
         }
@@ -303,19 +322,19 @@
           delete params[key]
         }
       })
-      
+
       const res = await exportAttendanceRecords(params)
-      
+
       // 创建下载链接
-      const blob = new Blob([res as BlobPart], { 
-        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+      const blob = new Blob([res as any], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
       })
       const link = document.createElement('a')
       link.href = URL.createObjectURL(blob)
       link.download = `考勤记录_${new Date().getTime()}.xlsx`
       link.click()
       URL.revokeObjectURL(link.href)
-      
+
       ElMessage.success('导出成功')
     } catch (error) {
       console.error('导出失败', error)
@@ -327,15 +346,15 @@
 </script>
 
 <style scoped lang="scss">
-.detail-content {
-  .abnormal-section {
-    margin-top: 20px;
+  .detail-content {
+    .abnormal-section {
+      margin-top: 20px;
 
-    h4 {
-      margin: 0 0 10px 0;
-      font-size: 14px;
-      color: #303133;
+      h4 {
+        margin: 0 0 10px;
+        font-size: 14px;
+        color: #303133;
+      }
     }
   }
-}
 </style>

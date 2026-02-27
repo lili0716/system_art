@@ -51,7 +51,7 @@
   // 搜索表单
   const searchForm = ref({
     dateRange: [] as string[],
-    status: 0 as number | undefined,  // Default to Pending
+    status: 0 as number | undefined, // Default to Pending
     type: undefined as number | undefined
   })
 
@@ -62,11 +62,16 @@
    */
   const getFormTypeType = (type: number) => {
     switch (type) {
-      case 1: return ''
-      case 2: return 'warning'
-      case 3: return 'info'
-      case 4: return 'danger'
-      default: return ''
+      case 1:
+        return ''
+      case 2:
+        return 'warning'
+      case 3:
+        return 'info'
+      case 4:
+        return 'danger'
+      default:
+        return ''
     }
   }
 
@@ -75,11 +80,16 @@
    */
   const getFormTypeName = (type: number) => {
     switch (type) {
-      case 1: return '补打卡'
-      case 2: return '出差'
-      case 3: return '外勤'
-      case 4: return '请假'
-      default: return '未知'
+      case 1:
+        return '补打卡'
+      case 2:
+        return '出差'
+      case 3:
+        return '外勤'
+      case 4:
+        return '请假'
+      default:
+        return '未知'
     }
   }
 
@@ -88,10 +98,14 @@
    */
   const getStatusType = (status: number) => {
     switch (status) {
-      case 0: return 'warning'
-      case 1: return 'success'
-      case 2: return 'danger'
-      default: return 'info'
+      case 0:
+        return 'warning'
+      case 1:
+        return 'success'
+      case 2:
+        return 'danger'
+      default:
+        return 'info'
     }
   }
 
@@ -100,10 +114,14 @@
    */
   const getStatusName = (status: number) => {
     switch (status) {
-      case 0: return '待审批'
-      case 1: return '已审批'
-      case 2: return '已拒绝'
-      default: return '未知'
+      case 0:
+        return '待审批'
+      case 1:
+        return '已审批'
+      case 2:
+        return '已拒绝'
+      default:
+        return '未知'
     }
   }
 
@@ -156,7 +174,7 @@
           width: 120,
           align: 'center',
           formatter: (row) => {
-            return row.applicant ? (row.applicant.nickName || row.applicant.username) : '-'
+            return row.applicant ? row.applicant.nickName || row.applicant.username : '-'
           }
         },
         {
@@ -211,7 +229,7 @@
                   color: '#f56c6c'
                 }
               ]
-              
+
               return h('div', [
                 h(ArtButtonMore, {
                   list: items,
@@ -264,9 +282,11 @@
       confirmButtonText: '确定',
       cancelButtonText: '取消',
       inputPattern: /.*/
-    }).then(async ({ value }) => {
-      await processApproval(row.id, 1, value || '同意')
-    }).catch(() => {})
+    })
+      .then(async ({ value }) => {
+        await processApproval(row.id, 1, value || '同意')
+      })
+      .catch(() => {})
   }
 
   /**
@@ -278,9 +298,11 @@
       cancelButtonText: '取消',
       inputPattern: /\S/,
       inputErrorMessage: '请输入拒绝原因'
-    }).then(async ({ value }) => {
-      await processApproval(row.id, 2, value)
-    }).catch(() => {})
+    })
+      .then(async ({ value }) => {
+        await processApproval(row.id, 2, value)
+      })
+      .catch(() => {})
   }
 
   /**

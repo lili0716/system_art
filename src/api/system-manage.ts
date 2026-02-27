@@ -215,12 +215,10 @@ export function uploadAttendanceFile(file: File, uploaderId: number) {
   const formData = new FormData()
   formData.append('file', file)
   formData.append('uploaderId', uploaderId.toString())
+  // 不要手动设置 Content-Type，axios 会自动为 FormData 生成含 boundary 的正确请求头
   return request.post({
     url: '/api/attendance/files/upload',
-    data: formData,
-    headers: {
-      'Content-Type': 'multipart/form-data'
-    }
+    data: formData
   })
 }
 
@@ -268,7 +266,7 @@ export function exportAttendanceRecords(params: any) {
 
 export function searchEmployees(keyword: string) {
   return request.get({
-    url: '/api/attendance/users/search',
+    url: '/api/users/search',
     params: { keyword }
   })
 }

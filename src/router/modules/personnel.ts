@@ -5,7 +5,7 @@ export const personnelRoutes: AppRouteRecord = {
   name: 'Personnel',
   component: '/index/index',
   meta: {
-    title: '人事管理',
+    title: 'menus.personnel.title',
     icon: 'ri:team-line', // Choosing a suitable icon for Personnel
     roles: ['R_SUPER', 'R_ADMIN']
   },
@@ -15,7 +15,7 @@ export const personnelRoutes: AppRouteRecord = {
       name: 'Employee',
       component: '/personnel/employee',
       meta: {
-        title: '员工管理',
+        title: 'menus.personnel.employee',
         icon: 'ri:user-star-line',
         keepAlive: true,
         roles: ['R_SUPER', 'R_ADMIN']

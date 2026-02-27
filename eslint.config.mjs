@@ -58,11 +58,10 @@ export default [
       'vue/multi-word-component-names': 'off', // 禁用对 Vue 组件名称的多词要求检查
       'no-multiple-empty-lines': ['off', { max: 1 }], // 不允许多个空行
       'no-unexpected-multiline': 'off' // 禁止空余的多行
-      
+
       // error：违反规则时抛出错误，会阻断 lint 流程 / 构建；
       // warn：违反规则时仅抛出警告，不阻断流程；
       // off：完全关闭该规则，不再做任何检查。
-
     }
   },
   // vue 规则

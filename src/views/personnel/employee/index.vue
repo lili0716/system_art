@@ -9,8 +9,12 @@
       <ArtTableHeader v-model:columns="columnChecks" :loading="loading" @refresh="refreshData">
         <template #left>
           <ElSpace wrap>
-            <ElButton @click="showDialog('add')" v-ripple>新员工入职</ElButton>
-            <ElButton @click="showSyncDialog" type="primary" v-ripple>数据同步</ElButton>
+            <ElButton @click="showDialog('add')" v-ripple>
+              {{ t('userTable.toolbar.newEmployee') }}
+            </ElButton>
+            <ElButton @click="showSyncDialog" type="primary" v-ripple>
+              {{ t('userTable.toolbar.syncData') }}
+            </ElButton>
           </ElSpace>
         </template>
       </ArtTableHeader>
@@ -34,12 +38,9 @@
         :user-data="currentUserData"
         @submit="handleDialogSubmit"
       />
-      
+
       <!-- 数据同步弹窗 -->
-      <DataSyncDialog
-        v-model:visible="syncDialogVisible"
-        @submit="handleSyncSubmit"
-      />
+      <DataSyncDialog v-model:visible="syncDialogVisible" @submit="handleSyncSubmit" />
     </ElCard>
   </div>
 </template>
@@ -48,14 +49,17 @@
   import ArtButtonTable from '@/components/core/forms/art-button-table/index.vue'
   import { useTable } from '@/hooks/core/useTable'
   import { fetchGetUserList, deleteUserById } from '@/api/system-manage'
-  import UserSearch from '@/views/system/user/modules/user-search.vue' // Reusing UserSearch
-  import EmployeeDialog from './modules/employee-dialog.vue' // Using new EmployeeDialog
-  import DataSyncDialog from './modules/data-sync-dialog.vue' // Data sync dialog
+  import UserSearch from '@/views/system/user/modules/user-search.vue'
+  import EmployeeDialog from './modules/employee-dialog.vue'
+  import DataSyncDialog from './modules/data-sync-dialog.vue'
   import { ElTag, ElMessageBox, ElMessage } from 'element-plus'
   import { DialogType } from '@/types'
   import { useUserStore } from '@/store/modules/user'
+  import { useI18n } from 'vue-i18n'
 
   defineOptions({ name: 'Employee' })
+
+  const { t } = useI18n()
 
   type UserListItem = Api.SystemManage.UserListItem
 
@@ -63,7 +67,7 @@
   const dialogType = ref<DialogType>('add')
   const dialogVisible = ref(false)
   const currentUserData = ref<Partial<UserListItem>>({})
-  
+
   // 数据同步弹窗相关
   const syncDialogVisible = ref(false)
 
@@ -82,8 +86,8 @@
 
   // 用户状态配置
   const USER_STATUS_CONFIG = {
-    '1': { type: 'success' as const, text: '在职' },
-    '2': { type: 'danger' as const, text: '离职' }
+    '1': { type: 'success' as const, text: t('userTable.status.employed') },
+    '2': { type: 'danger' as const, text: t('userTable.status.left') }
   } as const
 
   /**
@@ -135,14 +139,14 @@
       },
       columnsFactory: () => [
         { type: 'selection', align: 'center' },
-        { type: 'index', label: '序号', align: 'center', width: 60 },
-        { prop: 'nickName', label: '姓名', align: 'center' },
-        { prop: 'userGender', label: '性别', align: 'center' },
-        { prop: 'email', label: '邮箱', align: 'center' },
-        { prop: 'employeeId', label: '工号', align: 'center' },
+        { type: 'index', label: t('userTable.columns.index'), align: 'center', width: 60 },
+        { prop: 'nickName', label: t('userTable.columns.nickName'), align: 'center' },
+        { prop: 'userGender', label: t('userTable.columns.gender'), align: 'center' },
+        { prop: 'email', label: t('userTable.columns.email'), align: 'center' },
+        { prop: 'employeeId', label: t('userTable.columns.employeeId'), align: 'center' },
         {
           prop: 'status',
-          label: '在职状态',
+          label: t('userTable.columns.status'),
           align: 'center',
           formatter: (row) => {
             const statusConfig = getUserStatusConfig(row.status)
@@ -151,19 +155,22 @@
         },
         {
           prop: 'tenure',
-          label: '在职时长',
+          label: t('userTable.columns.tenure'),
           align: 'center',
-          formatter: (row) => (row.tenure ? `${row.tenure} 年` : '0.0 年')
+          formatter: (row) =>
+            row.tenure
+              ? `${row.tenure} ${t('userTable.units.year')}`
+              : `0.0 ${t('userTable.units.year')}`
         },
         {
           prop: 'hireDate',
-          label: '入职时间',
+          label: t('userTable.columns.hireDate'),
           align: 'center',
           formatter: (row) => formatDate(row.hireDate)
         },
         {
           prop: 'leaveDate',
-          label: '离职时间',
+          label: t('userTable.columns.leaveDate'),
           align: 'center',
           formatter: (row) => formatDate(row.leaveDate)
         },
@@ -174,30 +181,38 @@
           formatter: (row) => row.departmentName || '-'
         },
         {
+          prop: 'createTime',
+          label: t('userTable.columns.createTime'),
+          align: 'center',
+          formatter: (row) => formatDate(row.createTime)
+        },
+        {
           prop: 'updateTime',
-          label: '更新时间',
+          label: t('userTable.columns.updateTime'),
           align: 'center',
           formatter: (row) => formatDate(row.updateTime)
         },
         {
           prop: 'operation',
-          label: '操作',
+          label: t('userTable.columns.operation'),
           align: 'center',
-          width: 180, // 操作列保留宽度防止折行
+          width: 180,
           fixed: 'right',
           formatter: (row) =>
             h('div', [
               h(ArtButtonTable, {
                 type: 'view',
-                text: '查看',
+                text: t('userTable.actions.view'),
                 onClick: () => showDialog('view', row)
               }),
               h(ArtButtonTable, {
                 type: 'edit',
+                text: t('userTable.actions.edit'),
                 onClick: () => showDialog('edit', row)
               }),
               h(ArtButtonTable, {
                 type: 'delete',
+                text: t('userTable.actions.delete'),
                 onClick: () => deleteUser(row)
               })
             ])
@@ -238,18 +253,22 @@
    * 删除用户
    */
   const deleteUser = (row: UserListItem): void => {
-    ElMessageBox.confirm(`确定要删除该用户吗？`, '删除用户', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'error'
-    }).then(async () => {
+    ElMessageBox.confirm(
+      t('userTable.messages.deleteConfirm'),
+      t('userTable.messages.deleteTitle'),
+      {
+        confirmButtonText: t('common.confirm'),
+        cancelButtonText: t('common.cancel'),
+        type: 'error'
+      }
+    ).then(async () => {
       try {
         await deleteUserById(row.id)
-        ElMessage.success('删除成功')
+        ElMessage.success(t('userTable.messages.deleteSuccess'))
         refreshData()
       } catch (error) {
         console.error('删除用户失败:', error)
-        ElMessage.error('删除失败，请重试')
+        ElMessage.error(t('userTable.messages.deleteFailed'))
       }
     })
   }
@@ -283,35 +302,35 @@
   const handleSyncSubmit = async (syncData: any): Promise<void> => {
     try {
       console.log('开始数据同步:', syncData)
-      
+
       // 获取token
       const token = userStore.accessToken
       console.log('Token:', token)
-      
+
       // 调用后端API进行数据同步
       const response = await fetch('/api/users/sync', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': token
+          Authorization: token
         },
         body: JSON.stringify(syncData)
       })
-      
+
       console.log('Response status:', response.status)
-      
+
       const result = await response.json()
-      
+
       if (result.code === 200) {
-        ElMessage.success('数据同步成功')
+        ElMessage.success(t('userTable.sync.success'))
         console.log('同步结果:', result.data)
         refreshData()
       } else {
-        ElMessage.error(`数据同步失败: ${result.msg}`)
+        ElMessage.error(t('userTable.sync.failedWithReason', { msg: result.msg }))
       }
     } catch (error) {
       console.error('数据同步失败:', error)
-      ElMessage.error('数据同步失败，请重试')
+      ElMessage.error(t('userTable.sync.failedRetry'))
     }
   }
 </script>

@@ -11,7 +11,11 @@
       <el-form ref="formRef" :model="formData" :rules="rules" label-width="120px" class="edit-form">
         <!-- Common Fields -->
         <el-form-item label="表单类型" prop="type">
-          <el-select v-model="formData.type" placeholder="请选择表单类型" @change="handleTypeChange">
+          <el-select
+            v-model="formData.type"
+            placeholder="请选择表单类型"
+            @change="handleTypeChange"
+          >
             <el-option label="补打卡" :value="1" />
             <el-option label="出差" :value="2" />
             <el-option label="外勤" :value="3" />
@@ -121,13 +125,19 @@
             />
           </el-form-item>
           <el-form-item label="请假天数" prop="leaveDays">
-            <el-input-number v-model="formData.leaveDays" :precision="1" :step="0.5" :min="0" disabled />
+            <el-input-number
+              v-model="formData.leaveDays"
+              :precision="1"
+              :step="0.5"
+              :min="0"
+              disabled
+            />
           </el-form-item>
           <el-form-item label="请假原因" prop="reason">
             <el-input v-model="formData.reason" type="textarea" placeholder="请输入请假原因" />
           </el-form-item>
         </template>
-        
+
         <el-form-item label="备注" prop="remark">
           <el-input v-model="formData.remark" type="textarea" placeholder="请输入备注" />
         </el-form-item>
@@ -147,7 +157,12 @@
   import { ElMessage } from 'element-plus'
   import type { FormInstance, FormRules } from 'element-plus'
   import { useUserStore } from '@/store/modules/user'
-  import { createPunchCardForm, createBusinessTripForm, createFieldWorkForm, createLeaveForm } from '@/api/system-manage'
+  import {
+    createPunchCardForm,
+    createBusinessTripForm,
+    createFieldWorkForm,
+    createLeaveForm
+  } from '@/api/system-manage'
 
   defineOptions({ name: 'FormEdit' })
 
@@ -194,7 +209,7 @@
     let workStartMinute = 0
     let workEndHour = 18
     let workEndMinute = 0
-    
+
     const LUNCH_START_HOUR = 12
     const LUNCH_END_HOUR = 13
 
@@ -211,50 +226,50 @@
         workEndMinute = m
       }
     }
-    
+
     let totalMilliseconds = 0
-    
+
     let current = new Date(startDate)
     current.setHours(0, 0, 0, 0)
-    
+
     const endDay = new Date(endDate)
     endDay.setHours(0, 0, 0, 0)
 
     while (current <= endDay) {
       const workStart = new Date(current)
       workStart.setHours(workStartHour, workStartMinute, 0, 0)
-      
+
       const workEnd = new Date(current)
       workEnd.setHours(workEndHour, workEndMinute, 0, 0)
-      
+
       const lunchStart = new Date(current)
       lunchStart.setHours(LUNCH_START_HOUR, 0, 0, 0)
-      
+
       const lunchEnd = new Date(current)
       lunchEnd.setHours(LUNCH_END_HOUR, 0, 0, 0)
 
       const actualStart = new Date(Math.max(workStart.getTime(), startDate.getTime()))
       const actualEnd = new Date(Math.min(workEnd.getTime(), endDate.getTime()))
-      
+
       if (actualStart < actualEnd) {
         let duration = actualEnd.getTime() - actualStart.getTime()
-        
+
         const lunchOverlapStart = new Date(Math.max(actualStart.getTime(), lunchStart.getTime()))
         const lunchOverlapEnd = new Date(Math.min(actualEnd.getTime(), lunchEnd.getTime()))
-        
+
         if (lunchOverlapStart < lunchOverlapEnd) {
-          duration -= (lunchOverlapEnd.getTime() - lunchOverlapStart.getTime())
+          duration -= lunchOverlapEnd.getTime() - lunchOverlapStart.getTime()
         }
-        
+
         totalMilliseconds += duration
       }
-      
+
       current.setDate(current.getDate() + 1)
     }
 
     const hours = totalMilliseconds / (1000 * 60 * 60)
     const days = hours / 8
-    
+
     return parseFloat(days.toFixed(1))
   }
 
@@ -264,8 +279,7 @@
     }
   })
 
-  const handleTypeChange = () => {
-  }
+  const handleTypeChange = () => {}
 
   const handleCancel = () => {
     router.push('/form/application')
@@ -273,52 +287,52 @@
 
   const handleSubmit = async () => {
     if (!formRef.value) return
-    
+
     await formRef.value.validate(async (valid) => {
       if (valid) {
         submitting.value = true
         try {
           const payload = { ...formData }
           payload.applicant = { id: userStore.info.userId }
-          
+
           if (payload.type === 1) {
-              if (payload.punchTime) {
-                  const [date, time] = payload.punchTime.split(' ')
-                  payload.punchDate = date
-                  payload.punchTime = time
-              }
-              await createPunchCardForm(payload)
+            if (payload.punchTime) {
+              const [date, time] = payload.punchTime.split(' ')
+              payload.punchDate = date
+              payload.punchTime = time
+            }
+            await createPunchCardForm(payload)
           } else if (payload.type === 2) {
-              payload.location = payload.destination
-              payload.purpose = payload.reason
-              if (payload.startTime) payload.startDate = payload.startTime.split(' ')[0]
-              if (payload.endTime) payload.endDate = payload.endTime.split(' ')[0]
-              await createBusinessTripForm(payload)
+            payload.location = payload.destination
+            payload.purpose = payload.reason
+            if (payload.startTime) payload.startDate = payload.startTime.split(' ')[0]
+            if (payload.endTime) payload.endDate = payload.endTime.split(' ')[0]
+            await createBusinessTripForm(payload)
           } else if (payload.type === 3) {
-              payload.content = payload.reason
-              if (payload.startTime) {
-                  const [date, time] = payload.startTime.split(' ')
-                  payload.workDate = date
-                  payload.startTime = time
-              }
-              if (payload.endTime) {
-                  payload.endTime = payload.endTime.split(' ')[1]
-              }
-              await createFieldWorkForm(payload)
+            payload.content = payload.reason
+            if (payload.startTime) {
+              const [date, time] = payload.startTime.split(' ')
+              payload.workDate = date
+              payload.startTime = time
+            }
+            if (payload.endTime) {
+              payload.endTime = payload.endTime.split(' ')[1]
+            }
+            await createFieldWorkForm(payload)
           } else if (payload.type === 4) {
-              if (payload.startTime) {
-                  const [date, time] = payload.startTime.split(' ')
-                  payload.startDate = date
-                  payload.startTime = time
-              }
-               if (payload.endTime) {
-                  const [date, time] = payload.endTime.split(' ')
-                  payload.endDate = date
-                  payload.endTime = time
-              }
-              await createLeaveForm(payload)
+            if (payload.startTime) {
+              const [date, time] = payload.startTime.split(' ')
+              payload.startDate = date
+              payload.startTime = time
+            }
+            if (payload.endTime) {
+              const [date, time] = payload.endTime.split(' ')
+              payload.endDate = date
+              payload.endTime = time
+            }
+            await createLeaveForm(payload)
           }
-          
+
           ElMessage.success('提交成功')
           router.push('/form/application')
         } catch (error) {
@@ -333,41 +347,41 @@
 </script>
 
 <style scoped lang="scss">
-.form-edit-page {
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-
-  .form-card {
-    flex: 1;
+  .form-edit-page {
     display: flex;
     flex-direction: column;
+    padding: 16px;
 
-    :deep(.el-card__body) {
-      flex: 1;
+    .form-card {
       display: flex;
+      flex: 1;
       flex-direction: column;
-    }
 
-    .card-header {
-      .title {
-        font-size: 16px;
-        font-weight: 600;
+      :deep(.el-card__body) {
+        display: flex;
+        flex: 1;
+        flex-direction: column;
+      }
+
+      .card-header {
+        .title {
+          font-size: 16px;
+          font-weight: 600;
+        }
+      }
+
+      .edit-form {
+        flex: 1;
+        padding: 20px 0;
+      }
+
+      .form-footer {
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+        padding-top: 20px;
+        border-top: 1px solid var(--el-border-color-light);
       }
     }
-
-    .edit-form {
-      flex: 1;
-      padding: 20px 0;
-    }
-
-    .form-footer {
-      display: flex;
-      justify-content: center;
-      gap: 12px;
-      padding-top: 20px;
-      border-top: 1px solid var(--el-border-color-light);
-    }
   }
-}
 </style>

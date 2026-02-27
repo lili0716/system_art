@@ -5,7 +5,7 @@ export const organizationRoutes: AppRouteRecord = {
   name: 'Organization',
   component: '/index/index',
   meta: {
-    title: '组织架构',
+    title: 'menus.organization.title',
     icon: 'ri:building-line',
     roles: ['R_SUPER', 'R_ADMIN']
   },
@@ -15,7 +15,7 @@ export const organizationRoutes: AppRouteRecord = {
       name: 'Department',
       component: '/system/dept',
       meta: {
-        title: '部门管理',
+        title: 'menus.organization.dept',
         keepAlive: true,
         roles: ['R_SUPER', 'R_ADMIN']
       }
@@ -25,7 +25,7 @@ export const organizationRoutes: AppRouteRecord = {
       name: 'Position',
       component: '/system/position',
       meta: {
-        title: '职位管理',
+        title: 'menus.organization.position',
         keepAlive: true,
         roles: ['R_SUPER', 'R_ADMIN']
       }

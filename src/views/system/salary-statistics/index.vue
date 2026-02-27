@@ -15,7 +15,7 @@
         <el-form-item label="员工">
           <ApiSelect
             v-model="employeeId"
-            api-url="/api/attendance/users/search"
+            api-url="/api/users/search"
             :label-field="(data) => data.label"
             value-field="value"
             placeholder="输入工号或姓名搜索"
@@ -23,11 +23,7 @@
           />
         </el-form-item>
         <el-form-item label="部门">
-          <el-select
-            v-model="departmentId"
-            placeholder="选择部门"
-            style="width: 180px"
-          >
+          <el-select v-model="departmentId" placeholder="选择部门" style="width: 180px">
             <el-option
               v-for="dept in departments"
               :key="dept.id"
@@ -43,9 +39,7 @@
             </template>
             查询
           </el-button>
-          <el-button @click="resetForm">
-            重置
-          </el-button>
+          <el-button @click="resetForm"> 重置 </el-button>
           <el-button @click="handleExport">
             <template #icon>
               <el-icon><Download /></el-icon>

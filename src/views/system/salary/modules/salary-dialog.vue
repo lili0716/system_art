@@ -78,7 +78,7 @@
         formData.employeeId = props.userData.employeeId || ''
         formData.salary = (props.userData as any).salary || ''
         nextTick(() => {
-            formRef.value?.clearValidate()
+          formRef.value?.clearValidate()
         })
       }
     },
@@ -96,8 +96,8 @@
       if (valid) {
         try {
           await updateUserSalary({
-              id: formData.id!,
-              salary: formData.salary
+            id: formData.id!,
+            salary: formData.salary
           })
           ElMessage.success('薪资更新成功')
           dialogVisible.value = false

@@ -42,11 +42,7 @@
     </ElCard>
 
     <!-- 编辑弹窗 -->
-    <RuleDialog
-      v-model="dialogVisible"
-      :rule-data="currentRule"
-      @save="handleSaveRule"
-    />
+    <RuleDialog v-model="dialogVisible" :rule-data="currentRule" @save="handleSaveRule" />
   </div>
 </template>
 
@@ -146,10 +142,8 @@
           minWidth: 80,
           align: 'center',
           formatter: (row) => {
-            return h(
-              ElTag, 
-              { type: row.singleWeekOff ? 'warning' : 'success' }, 
-              () => row.singleWeekOff ? '单休' : '双休'
+            return h(ElTag, { type: row.singleWeekOff ? 'warning' : 'success' }, () =>
+              row.singleWeekOff ? '单休' : '双休'
             )
           }
         },
@@ -166,10 +160,8 @@
           minWidth: 80,
           align: 'center',
           formatter: (row) => {
-            return h(
-              ElTag, 
-              { type: row.enabled ? 'success' : 'info' }, 
-              () => row.enabled ? '启用' : '禁用'
+            return h(ElTag, { type: row.enabled ? 'success' : 'info' }, () =>
+              row.enabled ? '启用' : '禁用'
             )
           }
         },
@@ -187,7 +179,7 @@
                 icon: 'ri:edit-2-line'
               }
             ]
-            
+
             if (!row.isDefault) {
               items.push({
                 key: 'delete',
@@ -196,7 +188,7 @@
                 color: '#f56c6c'
               })
             }
-            
+
             return h('div', [
               h(ArtButtonMore, {
                 list: items,
@@ -210,7 +202,7 @@
     transform: {
       responseAdapter: (response: any) => {
         // 考勤规则接口返回的是数组形式
-        const list = Array.isArray(response) ? response : (response.data || [])
+        const list = Array.isArray(response) ? response : response.data || []
         return {
           data: list,
           total: list.length
@@ -274,16 +266,18 @@
       confirmButtonText: '确定',
       cancelButtonText: '取消',
       type: 'warning'
-    }).then(async () => {
-      try {
-        await deleteAttendanceRule(id)
-        ElMessage.success('删除成功')
-        refreshData()
-      } catch (error) {
-        console.error('删除规则失败:', error)
-        ElMessage.error('删除失败')
-      }
-    }).catch(() => {})
+    })
+      .then(async () => {
+        try {
+          await deleteAttendanceRule(id)
+          ElMessage.success('删除成功')
+          refreshData()
+        } catch (error) {
+          console.error('删除规则失败:', error)
+          ElMessage.error('删除失败')
+        }
+      })
+      .catch(() => {})
   }
 
   /**

@@ -31,9 +31,9 @@
 
   // 部门树数据
   const departmentTree = ref<any[]>([])
-  
+
   // 员工选项
-  const employeeOptions = ref<Array<{label: string, value: string}>>([])
+  const employeeOptions = ref<Array<{ label: string; value: string }>>([])
   const employeeLoading = ref(false)
 
   /**
@@ -57,12 +57,19 @@
       employeeOptions.value = []
       return
     }
-    
+
     employeeLoading.value = true
     try {
       const res: any = await searchEmployees(query)
       console.log('员工搜索结果:', res)
-      employeeOptions.value = res || []
+      if (res && res.records) {
+        employeeOptions.value = res.records.map((item: any) => ({
+          label: `${item.nickName} (${item.employeeId})`,
+          value: item.employeeId
+        }))
+      } else {
+        employeeOptions.value = []
+      }
     } catch (error) {
       console.error('搜索员工失败', error)
     } finally {
@@ -79,19 +86,19 @@
       key: 'employeeIds',
       type: 'select',
       props: {
-              placeholder: '输入工号或姓名搜索',
-              multiple: true,
-              filterable: true,
-              remote: true,
-              reserveKeyword: true,
-              remoteMethod: handleEmployeeSearch,
-              loading: employeeLoading.value,
-              options: employeeOptions.value,
-              clearable: true,
-              style: { width: '280px' },
-              max: 3,
-              valueKey: 'value'
-            }
+        placeholder: '输入工号或姓名搜索',
+        multiple: true,
+        filterable: true,
+        remote: true,
+        reserveKeyword: true,
+        remoteMethod: handleEmployeeSearch,
+        loading: employeeLoading.value,
+        options: employeeOptions.value,
+        clearable: true,
+        style: { width: '280px' },
+        max: 3,
+        valueKey: 'value'
+      }
     },
     {
       label: '部门',

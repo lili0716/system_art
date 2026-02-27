@@ -9,7 +9,9 @@
       <ArtTableHeader v-model:columns="columnChecks" :loading="loading" @refresh="refreshData">
         <template #left>
           <ElSpace wrap>
-            <ElButton @click="showDialog('add')" v-ripple>新增用户</ElButton>
+            <ElButton @click="showDialog('add')" v-ripple>
+              {{ t('userTable.toolbar.addUser') }}
+            </ElButton>
           </ElSpace>
         </template>
       </ArtTableHeader>
@@ -43,10 +45,13 @@
   import { fetchGetUserList, deleteUserById } from '@/api/system-manage'
   import UserSearch from './modules/user-search.vue'
   import UserDialog from './modules/user-dialog.vue'
-  import { ElTag, ElMessageBox } from 'element-plus'
+  import { ElTag, ElMessageBox, ElMessage } from 'element-plus'
   import { DialogType } from '@/types'
+  import { useI18n } from 'vue-i18n'
 
   defineOptions({ name: 'User' })
+
+  const { t } = useI18n()
 
   type UserListItem = Api.SystemManage.UserListItem
 
@@ -70,8 +75,8 @@
 
   // 用户状态配置
   const USER_STATUS_CONFIG = {
-    '1': { type: 'success' as const, text: '在职' },
-    '2': { type: 'danger' as const, text: '离职' }
+    '1': { type: 'success' as const, text: t('userTable.status.employed') },
+    '2': { type: 'danger' as const, text: t('userTable.status.left') }
   } as const
 
   /**
@@ -123,20 +128,20 @@
       },
       columnsFactory: () => [
         { type: 'selection', align: 'center' },
-        { type: 'index', label: '序号', align: 'center', width: 60 },
-        { prop: 'nickName', label: '姓名', align: 'center' },
-        { prop: 'userGender', label: '性别', align: 'center' },
-        { prop: 'email', label: '邮箱', align: 'center' },
-        { prop: 'employeeId', label: '工号', align: 'center' },
+        { type: 'index', label: t('userTable.columns.index'), align: 'center', width: 60 },
+        { prop: 'nickName', label: t('userTable.columns.nickName'), align: 'center' },
+        { prop: 'userGender', label: t('userTable.columns.gender'), align: 'center' },
+        { prop: 'email', label: t('userTable.columns.email'), align: 'center' },
+        { prop: 'employeeId', label: t('userTable.columns.employeeId'), align: 'center' },
         {
           prop: 'position',
-          label: '职位',
+          label: t('userTable.columns.position'),
           align: 'center',
           formatter: (row) => (row as any).position?.name || '-'
         },
         {
           prop: 'status',
-          label: '在职状态',
+          label: t('userTable.columns.status'),
           align: 'center',
           formatter: (row) => {
             const statusConfig = getUserStatusConfig(row.status)
@@ -145,53 +150,58 @@
         },
         {
           prop: 'tenure',
-          label: '在职时长',
+          label: t('userTable.columns.tenure'),
           align: 'center',
-          formatter: (row) => (row.tenure ? `${row.tenure} 年` : '0.0 年')
+          formatter: (row) =>
+            row.tenure
+              ? `${row.tenure} ${t('userTable.units.year')}`
+              : `0.0 ${t('userTable.units.year')}`
         },
         {
           prop: 'hireDate',
-          label: '入职时间',
+          label: t('userTable.columns.hireDate'),
           align: 'center',
           formatter: (row) => formatDate(row.hireDate)
         },
         {
           prop: 'leaveDate',
-          label: '离职时间',
+          label: t('userTable.columns.leaveDate'),
           align: 'center',
           formatter: (row) => formatDate(row.leaveDate)
         },
         {
           prop: 'createTime',
-          label: '创建日期',
+          label: t('userTable.columns.createTime'),
           align: 'center',
           formatter: (row) => formatDate(row.createTime)
         },
         {
           prop: 'updateTime',
-          label: '更新时间',
+          label: t('userTable.columns.updateTime'),
           align: 'center',
           formatter: (row) => formatDate(row.updateTime)
         },
         {
           prop: 'operation',
-          label: '操作',
+          label: t('userTable.columns.operation'),
           align: 'center',
-          width: 180, // 操作列保留宽度防止折行
+          width: 180,
           fixed: 'right',
           formatter: (row) =>
             h('div', [
               h(ArtButtonTable, {
-                type: 'view', // Changed valid type to 'view' if supported, or customized
-                text: '查看', // Using text since 'view' might not be a preset icon type or handled differently
+                type: 'view',
+                text: t('userTable.actions.view'),
                 onClick: () => showDialog('view', row)
               }),
               h(ArtButtonTable, {
                 type: 'edit',
+                text: t('userTable.actions.edit'),
                 onClick: () => showDialog('edit', row)
               }),
               h(ArtButtonTable, {
                 type: 'delete',
+                text: t('userTable.actions.delete'),
                 onClick: () => deleteUser(row)
               })
             ])
@@ -223,18 +233,22 @@
    * 删除用户
    */
   const deleteUser = (row: UserListItem): void => {
-    ElMessageBox.confirm(`确定要删除该用户吗？`, '删除用户', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'error'
-    }).then(async () => {
+    ElMessageBox.confirm(
+      t('userTable.messages.deleteConfirm'),
+      t('userTable.messages.deleteTitle'),
+      {
+        confirmButtonText: t('common.confirm'),
+        cancelButtonText: t('common.cancel'),
+        type: 'error'
+      }
+    ).then(async () => {
       try {
         await deleteUserById(row.id)
-        ElMessage.success('删除成功')
+        ElMessage.success(t('userTable.messages.deleteSuccess'))
         refreshData()
       } catch (error) {
         console.error('删除用户失败:', error)
-        ElMessage.error('删除失败，请重试')
+        ElMessage.error(t('userTable.messages.deleteFailed'))
       }
     })
   }

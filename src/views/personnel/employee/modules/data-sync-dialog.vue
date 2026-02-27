@@ -6,12 +6,7 @@
     align-center
     @close="handleClose"
   >
-    <ElForm
-      ref="formRef"
-      :model="formData"
-      :rules="rules"
-      label-width="120px"
-    >
+    <ElForm ref="formRef" :model="formData" :rules="rules" label-width="120px">
       <!-- 远程数据库配置 -->
       <ElCollapse v-model="activeCollapse">
         <ElCollapseItem title="远程数据库配置" name="db">
@@ -23,32 +18,32 @@
               <ElOption label="SQL Server" value="sqlserver" />
             </ElSelect>
           </ElFormItem>
-          
+
           <ElFormItem label="主机地址" prop="host">
             <ElInput v-model="formData.host" placeholder="请输入主机地址" />
           </ElFormItem>
-          
+
           <ElFormItem label="端口" prop="port">
             <ElInput v-model.number="formData.port" placeholder="请输入端口" />
           </ElFormItem>
-          
+
           <ElFormItem label="数据库名" prop="database">
             <ElInput v-model="formData.database" placeholder="请输入数据库名" />
           </ElFormItem>
-          
+
           <ElFormItem label="用户名" prop="username">
             <ElInput v-model="formData.username" placeholder="请输入用户名" />
           </ElFormItem>
-          
+
           <ElFormItem label="密码" prop="password">
             <ElInput v-model="formData.password" type="password" placeholder="请输入密码" />
           </ElFormItem>
-          
+
           <ElFormItem label="表名" prop="tableName">
             <ElInput v-model="formData.tableName" placeholder="请输入员工表名" />
           </ElFormItem>
         </ElCollapseItem>
-        
+
         <!-- 字段映射配置 -->
         <ElCollapseItem title="字段映射配置" name="field">
           <div class="field-mapping-container">
@@ -57,10 +52,21 @@
               <div class="header-item">远程字段</div>
               <div class="header-item">操作</div>
             </div>
-            
-            <div v-for="(mapping, index) in formData.fieldMappings" :key="index" class="mapping-row">
-              <ElFormItem :prop="`fieldMappings.${index}.localField`" :rules="[{ required: true, message: '请选择本地字段', trigger: 'change' }]">
-                <ElSelect v-model="mapping.localField" placeholder="请选择本地字段" style="width: 100%">
+
+            <div
+              v-for="(mapping, index) in formData.fieldMappings"
+              :key="index"
+              class="mapping-row"
+            >
+              <ElFormItem
+                :prop="`fieldMappings.${index}.localField`"
+                :rules="[{ required: true, message: '请选择本地字段', trigger: 'change' }]"
+              >
+                <ElSelect
+                  v-model="mapping.localField"
+                  placeholder="请选择本地字段"
+                  style="width: 100%"
+                >
                   <ElOption label="姓名" value="nickName" />
                   <ElOption label="性别" value="userGender" />
                   <ElOption label="工号" value="employeeId" />
@@ -70,15 +76,18 @@
                   <ElOption label="入职日期" value="hireDate" />
                 </ElSelect>
               </ElFormItem>
-              
-              <ElFormItem :prop="`fieldMappings.${index}.remoteField`" :rules="[{ required: true, message: '请输入远程字段', trigger: 'blur' }]">
+
+              <ElFormItem
+                :prop="`fieldMappings.${index}.remoteField`"
+                :rules="[{ required: true, message: '请输入远程字段', trigger: 'blur' }]"
+              >
                 <ElInput v-model="mapping.remoteField" placeholder="请输入远程字段名" />
               </ElFormItem>
-              
+
               <div class="action-buttons">
-                <ElButton 
-                  type="danger" 
-                  size="small" 
+                <ElButton
+                  type="danger"
+                  size="small"
                   @click="removeMapping(index)"
                   :disabled="formData.fieldMappings.length <= 1"
                 >
@@ -86,7 +95,7 @@
                 </ElButton>
               </div>
             </div>
-            
+
             <ElButton type="primary" plain @click="addMapping" style="margin-top: 10px">
               添加字段映射
             </ElButton>
@@ -106,8 +115,7 @@
 
 <script setup lang="ts">
   import type { FormInstance, FormRules } from 'element-plus'
-  import { ref, reactive, computed, nextTick } from 'vue'
-  import { ElMessage } from 'element-plus'
+  import { ref, reactive, computed } from 'vue'
 
   // Props
   const props = defineProps<{
@@ -142,7 +150,7 @@
     username: '',
     password: '',
     tableName: '',
-    
+
     // 字段映射
     fieldMappings: [
       { localField: 'nickName', remoteField: '' },
@@ -188,7 +196,7 @@
    */
   const handleSubmit = async () => {
     if (!formRef.value) return
-    
+
     try {
       await formRef.value.validate()
       emit('submit', { ...formData })
@@ -203,37 +211,37 @@
   .field-mapping-container {
     margin: 20px 0;
   }
-  
+
   .mapping-header {
     display: grid;
     grid-template-columns: 1fr 1fr 100px;
     gap: 10px;
     padding: 10px;
+    margin-bottom: 10px;
+    font-weight: bold;
     background-color: #f5f7fa;
     border-radius: 4px;
-    font-weight: bold;
-    margin-bottom: 10px;
   }
-  
+
   .header-item {
     text-align: center;
   }
-  
+
   .mapping-row {
     display: grid;
     grid-template-columns: 1fr 1fr 100px;
     gap: 10px;
-    margin-bottom: 10px;
     align-items: end;
+    margin-bottom: 10px;
   }
-  
+
   .action-buttons {
     padding-bottom: 24px;
   }
-  
+
   .dialog-footer {
     display: flex;
-    justify-content: flex-end;
     gap: 10px;
+    justify-content: flex-end;
   }
 </style>
