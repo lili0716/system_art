@@ -53,17 +53,10 @@
             </ElButton>
 
             <!-- 导入排班按钮 -->
-            <ElUpload
-              action=""
-              :show-file-list="false"
-              :before-upload="handleUpload"
-              accept=".xls,.xlsx"
-            >
-              <ElButton type="warning" :loading="uploading" v-ripple>
-                <el-icon><Upload /></el-icon>
-                导入排班
-              </ElButton>
-            </ElUpload>
+            <ElButton type="warning" @click="openImportDialog" v-ripple>
+              <el-icon><Upload /></el-icon>
+              导入排班
+            </ElButton>
           </ElSpace>
         </template>
 
@@ -121,21 +114,78 @@
         <ElButton @click="shiftDialogVisible = false">取消</ElButton>
       </template>
     </el-dialog>
+
+    <!-- 导入排班弹窗 -->
+    <el-dialog
+      v-model="importDialogVisible"
+      title="导入排班"
+      width="450px"
+      append-to-body
+      destroy-on-close
+    >
+      <div v-loading="uploading" element-loading-text="正在导入并解析数据，请稍候...">
+        <div class="import-tips" style="font-size: 13px; color: var(--el-text-color-regular); line-height: 1.6;">
+          <p>1. 请先下载排班模板，使用内置的下拉菜单选择班别。</p>
+          <p>2. 以工号为准录入排班。格子留空时将保留系统原有的排班，不作覆盖。</p>
+        </div>
+        <div class="import-actions" style="margin: 15px 0; text-align: center;">
+          <ElButton type="primary" plain @click="handleDownloadTemplate" :loading="downloading">
+            <el-icon><Download /></el-icon> 下载 {{ currentYear }}年{{ currentMonth }}月 导入模板
+          </ElButton>
+        </div>
+        <el-upload
+          ref="importUploadRef"
+          class="upload-drag"
+          drag
+          action=""
+          :auto-upload="false"
+          :limit="1"
+          :on-change="handleImportFileChange"
+          :on-exceed="handleImportExceed"
+          accept=".xls,.xlsx"
+          :disabled="uploading"
+        >
+          <el-icon class="el-icon--upload"><UploadFilled /></el-icon>
+          <div class="el-upload__text">
+            将 Excel 文件拖拽至此处，或 <em>点击上传</em>
+          </div>
+          <template #tip>
+            <div class="el-upload__tip" style="text-align: center;">只能上传 Excel 表格文件 (.xls, .xlsx)</div>
+          </template>
+        </el-upload>
+        <!-- 进度条模拟展示 -->
+        <div v-if="uploadProgress > 0" class="upload-progress" style="margin-top: 15px;">
+          <el-progress :percentage="uploadProgress" :status="uploadProgress === 100 ? 'success' : ''" />
+        </div>
+
+        <!-- 悬停已选文件并提供上层按钮控制 -->
+        <div v-if="selectedImportFile && uploadProgress === 0" style="margin-top: 15px; text-align: center;">
+          <ElIcon><Document /></ElIcon> <span>{{ selectedImportFile.name }}</span>
+        </div>
+        <div style="margin-top: 20px; text-align: center;">
+          <ElButton @click="importDialogVisible = false" :disabled="uploading">取消</ElButton>
+          <ElButton type="primary" @click="handleImportUpload" :loading="uploading" :disabled="!selectedImportFile">开始导入</ElButton>
+        </div>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
   import { ref, computed, h, onMounted } from 'vue'
-  import { ArrowLeft, ArrowRight, Refresh, Check, Upload } from '@element-plus/icons-vue'
+  import { ArrowLeft, ArrowRight, Refresh, Check, Upload, Download, UploadFilled, Document } from '@element-plus/icons-vue'
+  import type { UploadFile, UploadInstance } from 'element-plus'
   import { ElMessage } from 'element-plus'
   import { useTable } from '@/hooks/core/useTable'
   import {
     getMonthSchedule,
     generateMonthSchedule,
     updateScheduleCell,
-    importSchedule
+    importSchedule,
+    downloadScheduleTemplate
   } from '@/api/schedule'
   import { getDepartmentOptions, searchEmployees } from '@/api/system-manage'
+  import { useUserStore } from '@/store/modules/user'
   // import ArtButtonTable from '@/components/core/forms/art-button-table/index.vue'
 
   defineOptions({ name: 'AttendanceSchedule' })
@@ -250,14 +300,18 @@
             },
             st
               ? h(
-                  'span',
+                  'div',
                   {
-                    class: 'shift-tag',
-                    style: { backgroundColor: st.color }
+                    style: { 
+                      color: st.color, 
+                      backgroundColor: (st.color || '#409eff') + '26',
+                      border: `1px solid ${(st.color || '#409eff')}40`,
+                      borderRadius: '5px'
+                    }
                   },
-                  st.isRest ? '休' : st.name.slice(0, 2)
+                  st.isRest ? '休' : st.name
                 )
-              : h('span', { class: 'shift-empty' }, '-')
+              : h('div', { }, '-')
           )
         }
       }
@@ -371,34 +425,174 @@
     refreshData()
   }
 
-  // ===== 生成排班 =====
-  async function handleGenerate() {
-    generating.value = true
-    try {
-      const res = await generateMonthSchedule(currentYear.value, currentMonth.value)
-      ElMessage.success(res?.msg || '生成成功')
-      refreshData()
-    } catch {
-      ElMessage.error('生成排班失败')
-    } finally {
-      generating.value = false
+  // ===== 进度条颜色渐变器 =====
+  const customColors = [
+    { color: '#f56c6c', percentage: 20 },
+    { color: '#e6a23c', percentage: 40 },
+    { color: '#5cb87a', percentage: 60 },
+    { color: '#1989fa', percentage: 80 },
+    { color: '#6f7ad3', percentage: 100 }
+  ]
+
+  // ===== 生成排班 (SSE 流式连接与锁防护) =====
+  const generateDialogVisible = ref(false)
+  const generateProgress = ref(0)
+  const generateMessage = ref('正在准备请求服务器...')
+  const generateHasError = ref(false)
+  let sseSource: EventSource | null = null
+
+  function handleGenerate() {
+    generateDialogVisible.value = true
+    generateProgress.value = 0
+    generateMessage.value = '正在申请分布式排班事务锁...'
+    generateHasError.value = false
+    
+    // 正确从 Pinia Store 提取持久化存储的当前用户 Token
+    const userStore = useUserStore()
+    const token = userStore.accessToken || ''
+
+    // 携带参数拼接原生 SSE URL (由于是 GET 接口，参数拼在尾部)
+    const baseUrl = import.meta.env.VITE_APP_BASE_API || '/api'
+    const url = `${baseUrl}/schedule/generate?year=${currentYear.value}&month=${currentMonth.value}&token=${token}`
+
+    sseSource = new EventSource(url);
+
+    // == 监听来自服务端的持续推流 (进度) ==
+    sseSource.addEventListener('progress', (e: MessageEvent) => {
+      try {
+        const data = JSON.parse(e.data)
+        generateProgress.value = data.progress
+        generateMessage.value = data.message
+      } catch (err) {}
+    })
+
+    // == 监听来自服务端的结束信号 ==
+    sseSource.addEventListener('complete', (e: MessageEvent) => {
+      try {
+        const data = JSON.parse(e.data)
+        generateProgress.value = 100
+        generateMessage.value = data.msg || '生成完毕'
+        ElMessage.success(generateMessage.value)
+        refreshData()
+      } catch (err) {}
+      if (sseSource) {
+        sseSource.close()
+      }
+    })
+
+    // == 监听错误 (包括锁被抢、或者意外 OOM 抛出) ==
+    sseSource.addEventListener('error', (e: MessageEvent) => {
+      let msg = '服务器拒绝了请求或长连接意外断开'
+      // 尝试解析携带的 JSON (Spring SseEmitter 返回格式)
+      try {
+         if (e.data) {
+           const data = JSON.parse(e.data)
+           msg = data.msg || msg
+         }
+      } catch (err) {}
+      
+      generateHasError.value = true
+      generateMessage.value = msg
+      ElMessage.error(msg)
+      if (sseSource) sseSource.close()
+    })
+    
+    // 原生 onError 兜底
+    sseSource.onerror = (err) => {
+      if (!generateHasError.value && generateProgress.value < 100) {
+         generateHasError.value = true
+         generateMessage.value = '与服务器的流式连接丢失，可能网关发生了阻断'
+      }
+      if (sseSource) sseSource.close()
     }
   }
 
-  // ===== 导入排班 =====
+  function closeGenerateDialog() {
+    generateDialogVisible.value = false
+    if (sseSource) {
+       sseSource.close()
+       sseSource = null
+    }
+  }
+
+  const importDialogVisible = ref(false)
   const uploading = ref(false)
-  const handleUpload = async (file: File) => {
-    uploading.value = true
+  const uploadProgress = ref(0)
+  const downloading = ref(false)
+
+  const importUploadRef = ref<UploadInstance>()
+  const selectedImportFile = ref<File | null>(null)
+
+  function openImportDialog() {
+    importDialogVisible.value = true
+    uploadProgress.value = 0
+    selectedImportFile.value = null
+    importUploadRef.value?.clearFiles()
+  }
+
+  async function handleDownloadTemplate() {
+    downloading.value = true
     try {
-      const res = await importSchedule(file, currentYear.value, currentMonth.value)
-      ElMessage.success(res?.msg || '导入成功')
-      refreshData()
+      const res = await downloadScheduleTemplate(currentYear.value, currentMonth.value)
+      const blob = new Blob([res as any])
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `schedule_template_${currentYear.value}_${currentMonth.value}.xlsx`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
     } catch {
-      // API error handler will show message mostly
+      ElMessage.error('下载模板失败')
+    } finally {
+      downloading.value = false
+    }
+  }
+
+  const handleImportFileChange = (file: UploadFile) => {
+    selectedImportFile.value = file.raw as File
+  }
+
+  const handleImportExceed = () => {
+    ElMessage.warning('只能选择一个文件，请先移除当前文件后再选')
+  }
+
+  const handleImportUpload = async () => {
+    if (!selectedImportFile.value) {
+      ElMessage.warning('请先选择要导入的Excel文件')
+      return
+    }
+
+    uploading.value = true
+    uploadProgress.value = 10
+    
+    // 模拟平滑进度条动画
+    const progressTimer = setInterval(() => {
+      if (uploadProgress.value < 85) {
+        uploadProgress.value += Math.floor(Math.random() * 10) + 5
+      }
+    }, 500)
+
+    try {
+      const res = await importSchedule(selectedImportFile.value, currentYear.value, currentMonth.value)
+      clearInterval(progressTimer)
+      uploadProgress.value = 100
+      ElMessage.success(res?.msg || '导入成功')
+      
+      // 等待动画结束自动关闭弹窗刷新
+      setTimeout(() => {
+        importDialogVisible.value = false
+        selectedImportFile.value = null
+        importUploadRef.value?.clearFiles()
+        refreshData()
+      }, 600)
+    } catch {
+      clearInterval(progressTimer)
+      uploadProgress.value = 0
     } finally {
       uploading.value = false
     }
-    return false // 阻止默认上传
   }
 
   // ===== 调班弹窗 =====
@@ -472,13 +666,15 @@
 
   .legend-dot {
     flex-shrink: 0;
-    width: 10px;
-    height: 10px;
+    width: 12px;
+    height: 12px;
     border-radius: 50%;
   }
 
   .legend-name {
     white-space: nowrap;
+    font-size: 13px;
+    font-weight: 500;
   }
 
   /* 员工列 */
@@ -511,26 +707,6 @@
     &:hover {
       background: rgb(64 158 255 / 6%);
     }
-  }
-
-  .shift-tag {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 40px;
-    height: 28px;
-    font-size: 12px;
-    font-weight: 700;
-    color: #fff;
-    letter-spacing: 0.5px;
-    user-select: none;
-    border-radius: 6px;
-  }
-
-  .shift-empty {
-    font-size: 13px;
-    color: var(--el-text-color-placeholder);
-    user-select: none;
   }
 
   /* 调班弹窗内容 */

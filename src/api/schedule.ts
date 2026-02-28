@@ -83,6 +83,16 @@ export function importSchedule(file: File, year: number, month: number) {
   formData.append('month', month.toString())
   return request.post<any>({
     url: '/api/schedule/import',
-    data: formData
+    data: formData,
+    timeout: 30000
+  })
+}
+
+// 下载导入模板
+export function downloadScheduleTemplate(year: number, month: number) {
+  return request.get<Blob>({
+    url: '/api/schedule/template',
+    params: { year, month },
+    responseType: 'blob'
   })
 }

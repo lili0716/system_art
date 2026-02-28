@@ -42,6 +42,9 @@
       </div>
 
       <div class="upload-actions">
+        <div v-show="uploading && uploadProgress > 0" style="margin-bottom: 20px;">
+          <el-progress :percentage="uploadProgress" :status="uploadProgress === 100 ? 'success' : ''" />
+        </div>
         <ElButton
           type="primary"
           size="large"
@@ -147,6 +150,7 @@
   const uploadRef = ref()
   const selectedFile = ref<File | null>(null)
   const uploading = ref(false)
+  const uploadProgress = ref(0)
   const parseResult = ref<any>(null)
 
   const handleFileChange = (file: UploadFile) => {
@@ -169,7 +173,15 @@
     }
 
     uploading.value = true
+    uploadProgress.value = 10
     parseResult.value = null
+
+    // 模拟平滑进度条动画
+    const progressTimer = setInterval(() => {
+      if (uploadProgress.value < 85) {
+        uploadProgress.value += Math.floor(Math.random() * 8) + 4
+      }
+    }, 400)
 
     try {
       const userId = userStore.getUserInfo?.userId
@@ -179,20 +191,30 @@
       }
 
       const res: any = await uploadAttendanceFile(selectedFile.value, userId)
-      if (res.data) {
-        parseResult.value = res.data
-        if (res.data.success !== false) {
-          ElMessage.success(
-            `解析完成！成功: ${res.data.successCount || 0} 条，失败: ${res.data.failedCount || 0} 条`
-          )
-        } else {
-          ElMessage.error(res.data.message || '解析失败')
-        }
+      clearInterval(progressTimer)
+
+      // res 已经被底层 axios 拦截器清洗，它就是业务级的 Map 实体包
+      if (res && res.success !== false) {
+        uploadProgress.value = 100
+        parseResult.value = res
+        ElMessage.success(
+            `解析完成！成功: ${res.successCount || 0} 条，失败: ${res.failedCount || 0} 条`
+        )
+      } else {
+         uploadProgress.value = 0
+         // 若有局部非抛错型的业务级异常
+         if (res && res.message) {
+            ElMessage.error(res.message)
+         }
       }
     } catch (error: any) {
+      clearInterval(progressTimer)
+      uploadProgress.value = 0
       ElMessage.error(error.message || '上传失败')
     } finally {
-      uploading.value = false
+      setTimeout(() => {
+        uploading.value = false
+      }, 500)
     }
   }
 
