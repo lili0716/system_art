@@ -47,7 +47,7 @@
             </ElSelect>
 
             <!-- 生成排班按钮 -->
-            <ElButton type="primary" :loading="generating" @click="handleGenerate" v-ripple>
+            <ElButton type="primary" :loading="generateDialogVisible" @click="handleGenerate" v-ripple>
               <el-icon><Refresh /></el-icon>
               生成本月排班
             </ElButton>
@@ -112,6 +112,29 @@
       </div>
       <template #footer>
         <ElButton @click="shiftDialogVisible = false">取消</ElButton>
+      </template>
+    </el-dialog>
+
+    <!-- 生成排班进度弹窗 -->
+    <el-dialog
+      v-model="generateDialogVisible"
+      title="正在疯狂计算生成排班中，请勿关闭页面"
+      width="400px"
+      append-to-body
+      :close-on-click-modal="false"
+      :show-close="false"
+    >
+      <div style="text-align: center; margin: 25px 0 10px 0;">
+        <el-progress 
+           type="circle" 
+           :percentage="Math.round(generateProgress)" 
+           :status="generateHasError ? 'exception' : (generateProgress === 100 ? 'success' : '')" />
+        <div style="margin-top: 15px; color: #606266; font-size: 14px;">{{ generateMessage }}</div>
+      </div>
+      <template #footer>
+        <ElButton v-if="generateHasError || generateProgress === 100" type="primary" @click="closeGenerateDialog">
+          关闭面板
+        </ElButton>
       </template>
     </el-dialog>
 
@@ -182,7 +205,8 @@
     generateMonthSchedule,
     updateScheduleCell,
     importSchedule,
-    downloadScheduleTemplate
+    downloadScheduleTemplate,
+    getGenerateProgress
   } from '@/api/schedule'
   import { getDepartmentOptions, searchEmployees } from '@/api/system-manage'
   import { useUserStore } from '@/store/modules/user'
@@ -434,84 +458,84 @@
     { color: '#6f7ad3', percentage: 100 }
   ]
 
-  // ===== 生成排班 (SSE 流式连接与锁防护) =====
+  // ===== 生成排班 (基于 Redis 分布式锁与异步秒级轮询架构) =====
   const generateDialogVisible = ref(false)
   const generateProgress = ref(0)
   const generateMessage = ref('正在准备请求服务器...')
   const generateHasError = ref(false)
-  let sseSource: EventSource | null = null
+  let pollTimer: number | null = null
 
-  function handleGenerate() {
+  async function handleGenerate() {
     generateDialogVisible.value = true
     generateProgress.value = 0
     generateMessage.value = '正在申请分布式排班事务锁...'
     generateHasError.value = false
     
-    // 正确从 Pinia Store 提取持久化存储的当前用户 Token
-    const userStore = useUserStore()
-    const token = userStore.accessToken || ''
+    if (pollTimer) clearInterval(pollTimer)
 
-    // 携带参数拼接原生 SSE URL (由于是 GET 接口，参数拼在尾部)
-    const baseUrl = import.meta.env.VITE_APP_BASE_API || '/api'
-    const url = `${baseUrl}/schedule/generate?year=${currentYear.value}&month=${currentMonth.value}&token=${token}`
-
-    sseSource = new EventSource(url);
-
-    // == 监听来自服务端的持续推流 (进度) ==
-    sseSource.addEventListener('progress', (e: MessageEvent) => {
-      try {
-        const data = JSON.parse(e.data)
-        generateProgress.value = data.progress
-        generateMessage.value = data.message
-      } catch (err) {}
-    })
-
-    // == 监听来自服务端的结束信号 ==
-    sseSource.addEventListener('complete', (e: MessageEvent) => {
-      try {
-        const data = JSON.parse(e.data)
-        generateProgress.value = 100
-        generateMessage.value = data.msg || '生成完毕'
-        ElMessage.success(generateMessage.value)
-        refreshData()
-      } catch (err) {}
-      if (sseSource) {
-        sseSource.close()
+    try {
+      // 1. 发起生成请求获取 taskId
+      const res: any = await generateMonthSchedule(currentYear.value, currentMonth.value)
+      // 在当前项目的 Axios 拦截器中，如果状态不为 200 就会直接进 catch，成功则直接返回 data 层
+      if (!res || !res.taskId) {
+        generateHasError.value = true
+        generateMessage.value = '无法从服务器获取任务凭证'
+        ElMessage.error(generateMessage.value)
+        return
       }
-    })
 
-    // == 监听错误 (包括锁被抢、或者意外 OOM 抛出) ==
-    sseSource.addEventListener('error', (e: MessageEvent) => {
-      let msg = '服务器拒绝了请求或长连接意外断开'
-      // 尝试解析携带的 JSON (Spring SseEmitter 返回格式)
-      try {
-         if (e.data) {
-           const data = JSON.parse(e.data)
-           msg = data.msg || msg
-         }
-      } catch (err) {}
-      
+      const taskId = res.taskId
+
+      // 2. 开启每秒轮询
+      pollTimer = window.setInterval(async () => {
+        try {
+          const pRes: any = await getGenerateProgress(taskId)
+          
+          if (pRes) {
+            generateProgress.value = pRes.progress
+            generateMessage.value = pRes.message
+            
+            if (pRes.error) {
+              generateHasError.value = true
+              ElMessage.error(pRes.message || '生成期间发生异常')
+              if (pollTimer) clearInterval(pollTimer)
+            } else if (pRes.complete || pRes.progress >= 100) {
+              generateProgress.value = 100
+              generateMessage.value = pRes.message || '生成完毕'
+              ElMessage.success(generateMessage.value)
+              refreshData()
+              if (pollTimer) clearInterval(pollTimer)
+              
+              setTimeout(() => {
+                closeGenerateDialog()
+              }, 1200)
+            }
+          } else {
+            // 查不到进度也认为异常 (例如过期或者锁释放丢弃)
+            generateHasError.value = true
+            generateMessage.value = '无法获取生成进度，请重试'
+            ElMessage.error(generateMessage.value)
+            if (pollTimer) clearInterval(pollTimer)
+          }
+        } catch (e) {
+          generateHasError.value = true
+          generateMessage.value = '流式轮询网络断开，可能网关阻断'
+          if (pollTimer) clearInterval(pollTimer)
+        }
+      }, 1000)
+
+    } catch (e: any) {
       generateHasError.value = true
-      generateMessage.value = msg
-      ElMessage.error(msg)
-      if (sseSource) sseSource.close()
-    })
-    
-    // 原生 onError 兜底
-    sseSource.onerror = (err) => {
-      if (!generateHasError.value && generateProgress.value < 100) {
-         generateHasError.value = true
-         generateMessage.value = '与服务器的流式连接丢失，可能网关发生了阻断'
-      }
-      if (sseSource) sseSource.close()
+      generateMessage.value = e.message || '网络请求异常'
+      ElMessage.error(generateMessage.value)
     }
   }
 
   function closeGenerateDialog() {
     generateDialogVisible.value = false
-    if (sseSource) {
-       sseSource.close()
-       sseSource = null
+    if (pollTimer) {
+       clearInterval(pollTimer)
+       pollTimer = null
     }
   }
 

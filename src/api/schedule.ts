@@ -45,11 +45,19 @@ export function getMonthSchedule(
   })
 }
 
-// 生成月排班
+// 生成月排班（发起任务并返回 taskId）
 export function generateMonthSchedule(year: number, month: number) {
-  return request.post<any>({
-    url: `/api/schedule/generate?year=${year}&month=${month}`,
-    data: {}
+  return request.get<any>({
+    url: '/api/schedule/generate',
+    params: { year, month }
+  })
+}
+
+// 获取排班生成进度
+export function getGenerateProgress(taskId: string) {
+  return request.get<any>({
+    url: '/api/schedule/progress',
+    params: { taskId }
   })
 }
 
