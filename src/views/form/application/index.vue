@@ -294,7 +294,7 @@
    * 新增申请
    */
   const handleCreate = () => {
-    router.push('/form/application/edit')
+    router.push('/form/edit')
   }
 
   /**

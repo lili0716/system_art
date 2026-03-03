@@ -58,6 +58,28 @@ export class MenuProcessor {
    */
   private async processBackendMenu(): Promise<AppRouteRecord[]> {
     const list = await fetchGetMenuList()
+
+    // 手动注册不在菜单表但也需权限校验的隐藏路由：个人中心
+    const userCenterRoute = asyncRoutes
+      .find((r) => r.path === '/system')
+      ?.children?.find((c) => c.path === 'user-center')
+
+    if (userCenterRoute) {
+      const systemItem = list.find((r) => r.path === '/system')
+      if (systemItem && systemItem.children) {
+        if (!systemItem.children.find((c) => c.path === 'user-center')) {
+          systemItem.children.push(userCenterRoute)
+        }
+      } else {
+        list.push({
+          path: '/system',
+          name: 'System',
+          component: '/index/index',
+          children: [userCenterRoute]
+        })
+      }
+    }
+
     const filtered = this.filterEmptyMenus(list)
     return filtered
   }
@@ -205,10 +227,10 @@ export class MenuProcessor {
 
     console.error(
       `[路由配置错误] 菜单 "${formatMenuTitle(menuTitle)}" (name: ${routeName}, path: ${path}) 配置错误\n` +
-        `  位置: ${parentName} > ${routeName}\n` +
-        `  问题: ${level + 1}级菜单的 path 不能以 / 开头\n` +
-        `  当前配置: path: '${path}'\n` +
-        `  应该改为: path: '${suggestedPath}'`
+      `  位置: ${parentName} > ${routeName}\n` +
+      `  问题: ${level + 1}级菜单的 path 不能以 / 开头\n` +
+      `  当前配置: path: '${path}'\n` +
+      `  应该改为: path: '${suggestedPath}'`
     )
   }
 

@@ -157,7 +157,9 @@
 <script setup lang="ts">
   import { useUserStore } from '@/store/modules/user'
   import type { FormInstance, FormRules } from 'element-plus'
+  import { ElMessage } from 'element-plus'
   import { useI18n } from 'vue-i18n'
+  import { updateUserProfile } from '@/api/system-manage'
 
   defineOptions({ name: 'UserCenter' })
 
@@ -175,22 +177,22 @@
    * 用户信息表单
    */
   const form = reactive({
-    realName: 'John Snow',
-    nikeName: '皮卡丘',
-    email: '59301283@mall.com',
-    mobile: '18888888888',
-    address: '广东省深圳市宝安区西乡街道101栋201',
-    sex: '2',
-    des: 'Art Design Pro 是一款兼具设计美学与高效开发的后台系统.'
+    realName: '',
+    nikeName: '',
+    email: '',
+    mobile: '',
+    address: '',
+    sex: '',
+    des: ''
   })
 
   /**
    * 密码修改表单
    */
   const pwdForm = reactive({
-    password: '123456',
-    newPassword: '123456',
-    confirmPassword: '123456'
+    password: '',
+    newPassword: '',
+    confirmPassword: ''
   })
 
   /**
@@ -231,6 +233,25 @@
     t('userCenter.tags.inclusive')
   ]
 
+  // 监听用户信息变化，当刷新或异步获取到时赋给表单
+  watch(
+    () => userInfo.value,
+    (newVal) => {
+      if (newVal) {
+        form.realName = newVal.userName || ''
+        form.nikeName = newVal.userName || ''
+        form.email = newVal.email || ''
+        // @ts-ignore
+        form.mobile = newVal.userPhone || ''
+        // @ts-ignore
+        form.sex = newVal.userGender || ''
+        // @ts-ignore
+        form.des = newVal.remark || ''
+      }
+    },
+    { immediate: true }
+  )
+
   onMounted(() => {
     getDate()
   })
@@ -250,16 +271,75 @@
   }
 
   /**
-   * 切换用户信息编辑状态
+   * 切换用户信息编辑状态并保存
    */
-  const edit = () => {
-    isEdit.value = !isEdit.value
+  const edit = async () => {
+    if (isEdit.value) {
+      // 正在编辑，本次点击意味着“保存”
+      if (!ruleFormRef.value) return
+      await ruleFormRef.value.validate(async (valid) => {
+        if (valid) {
+          try {
+            await updateUserProfile({
+              nickName: form.nikeName,
+              email: form.email,
+              userPhone: form.mobile,
+              userGender: form.sex,
+              remark: form.des
+            })
+            ElMessage.success('个人资料更新成功，部分信息重新登录后生效')
+            isEdit.value = false
+            // 同步更新一下本地 store
+            // 同步更新一下本地 store
+            // @ts-ignore
+            userStore.setUserInfo({
+              ...userInfo.value,
+              nickName: form.nikeName,
+              userName: form.nikeName,
+              email: form.email,
+              userPhone: form.mobile,
+              userGender: form.sex,
+              remark: form.des
+            })
+          } catch (error) {
+            console.error('更新失败:', error)
+          }
+        }
+      })
+    } else {
+      isEdit.value = true
+    }
   }
 
   /**
-   * 切换密码编辑状态
+   * 切换密码编辑状态并保存
    */
-  const editPwd = () => {
-    isEditPwd.value = !isEditPwd.value
+  const editPwd = async () => {
+    if (isEditPwd.value) {
+      if (!pwdForm.password || !pwdForm.newPassword || !pwdForm.confirmPassword) {
+        ElMessage.warning('请填写完整的密码信息')
+        return
+      }
+      if (pwdForm.newPassword !== pwdForm.confirmPassword) {
+        ElMessage.warning('两次输入的新密码不一致')
+        return
+      }
+      try {
+        await updateUserProfile({
+          password: pwdForm.password,
+          newPassword: pwdForm.newPassword
+        })
+        ElMessage.success('密码修改成功，请重新登录')
+        isEditPwd.value = false
+        // 密码改成功后触发登出
+        setTimeout(() => {
+            userStore.logOut()
+        }, 1500)
+      } catch (error) {
+        console.error('修改密码失败:', error)
+      }
+    } else {
+      isEditPwd.value = true
+    }
   }
 </script>

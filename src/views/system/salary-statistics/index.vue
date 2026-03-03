@@ -1,169 +1,159 @@
 <template>
   <div class="salary-statistics-page art-full-height">
     <!-- 搜索栏 -->
-    <div class="search-wrapper">
-      <el-form inline>
-        <el-form-item label="统计月份">
-          <el-date-picker
-            v-model="month"
-            type="month"
-            value-format="YYYY-MM"
-            placeholder="选择月份"
-            style="width: 140px"
-          />
-        </el-form-item>
-        <el-form-item label="员工">
-          <ApiSelect
-            v-model="employeeId"
-            api-url="/api/users/search"
-            :label-field="(data) => data.label"
-            value-field="value"
-            placeholder="输入工号或姓名搜索"
-            style="width: 200px"
-          />
-        </el-form-item>
-        <el-form-item label="部门">
-          <el-select v-model="departmentId" placeholder="选择部门" style="width: 180px">
-            <el-option
-              v-for="dept in departments"
-              :key="dept.id"
-              :label="dept.name"
-              :value="dept.id"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="fetchData">
-            <template #icon>
-              <el-icon><Search /></el-icon>
-            </template>
-            查询
-          </el-button>
-          <el-button @click="resetForm"> 重置 </el-button>
-          <el-button @click="handleExport">
-            <template #icon>
-              <el-icon><Download /></el-icon>
-            </template>
-            导出
-          </el-button>
-        </el-form-item>
-      </el-form>
-    </div>
+    <SalaryStatisticsSearch
+      v-model="searchForm"
+      @search="handleSearch"
+      @reset="resetSearchParams"
+    />
 
     <!-- 表格 -->
-    <el-card class="art-table-card" shadow="never">
-      <el-table v-loading="loading" :data="data" height="100%" border style="width: 100%">
-        <el-table-column prop="userName" label="姓名" min-width="100" fixed="left" align="center" />
-        <el-table-column prop="employeeId" label="工号" min-width="100" align="center" />
-        <el-table-column prop="departmentName" label="部门" min-width="120" align="center" />
-        <el-table-column label="出勤天数" min-width="120" align="center">
-          <template #default="{ row }">
-            {{ row.actualAttendanceDays }} / {{ row.shouldAttendanceDays || '-' }}
-          </template>
-        </el-table-column>
-        <el-table-column label="平时加班(h)" min-width="120" align="center">
-          <template #default="{ row }">
-            <el-tag v-if="row.weekdayOvertimeHours > 0" type="success" size="small">{{
-              row.weekdayOvertimeHours
-            }}</el-tag>
-            <span v-else>-</span>
-          </template>
-        </el-table-column>
-        <el-table-column label="周末加班(h)" min-width="120" align="center">
-          <template #default="{ row }">
-            <el-tag v-if="row.weekendOvertimeHours > 0" type="warning" size="small">{{
-              row.weekendOvertimeHours
-            }}</el-tag>
-            <span v-else>-</span>
-          </template>
-        </el-table-column>
-        <el-table-column prop="sickLeaveHours" label="病假(h)" min-width="90" align="center">
-          <template #default="{ row }">{{
-            row.sickLeaveHours > 0 ? row.sickLeaveHours : '-'
-          }}</template>
-        </el-table-column>
-        <el-table-column prop="personalLeaveHours" label="事假(h)" min-width="90" align="center">
-          <template #default="{ row }">{{
-            row.personalLeaveHours > 0 ? row.personalLeaveHours : '-'
-          }}</template>
-        </el-table-column>
-        <el-table-column label="餐补" min-width="120" align="center">
-          <template #default="{ row }">{{ `¥${row.mealSubsidy} (${row.mealCount}次)` }}</template>
-        </el-table-column>
-        <el-table-column label="应发工资" min-width="150" fixed="right" align="center">
-          <template #default="{ row }">
-            <span class="text-red-500 font-bold">¥{{ row.grossSalary }}</span>
-          </template>
-        </el-table-column>
-      </el-table>
-    </el-card>
+    <ElCard class="art-table-card" shadow="never">
+      <!-- 表格头部 -->
+      <ArtTableHeader v-model:columns="columnChecks" :loading="loading" @refresh="refreshData" />
+
+      <!-- 表格内容 -->
+      <ArtTable
+        :loading="loading"
+        :data="data"
+        :columns="columns"
+        :pagination="pagination"
+        @pagination:size-change="handleSizeChange"
+        @pagination:current-change="handleCurrentChange"
+      >
+      </ArtTable>
+    </ElCard>
   </div>
 </template>
 
 <script setup lang="ts">
-  import { ref, onMounted } from 'vue'
-  import { getSalaryStatistics, getDepartmentOptions } from '@/api/system-manage'
-  import { ApiSelect } from '@/components/core/forms/api-select'
+  import { ref, h } from 'vue'
+  import { ElTag, ElCard } from 'element-plus'
   import dayjs from 'dayjs'
-  import { ElMessage } from 'element-plus'
-  import { Search, Download } from '@element-plus/icons-vue'
+  import { useTable } from '@/hooks/core/useTable'
+  import { getSalaryStatistics } from '@/api/system-manage'
+  import ArtTableHeader from '@/components/core/tables/art-table-header/index.vue'
+  import ArtTable from '@/components/core/tables/art-table/index.vue'
+  import SalaryStatisticsSearch from './modules/salary-statistics-search.vue'
 
   defineOptions({ name: 'SalaryStatistics' })
 
-  const month = ref(dayjs().format('YYYY-MM'))
-  const employeeId = ref('')
-  const departmentId = ref<number | undefined>(undefined)
-  const departments = ref<any[]>([])
-  const data = ref([])
-  const loading = ref(false)
-
-  // 获取部门列表
-  const fetchDepartments = async () => {
-    try {
-      const res = await getDepartmentOptions()
-      if (res.data) {
-        departments.value = res.data
-      }
-    } catch (error) {
-      console.error('获取部门列表失败:', error)
-    }
-  }
-
-  const fetchData = async () => {
-    if (!month.value) return
-    loading.value = true
-    try {
-      const res = await getSalaryStatistics(month.value, employeeId.value, departmentId.value)
-      if ((res as any).data) {
-        data.value = (res as any).data
-      }
-    } catch (error) {
-      console.error(error)
-    } finally {
-      loading.value = false
-    }
-  }
-
-  const resetForm = () => {
-    employeeId.value = ''
-    departmentId.value = undefined
-  }
-
-  const handleExport = () => {
-    ElMessage.info('导出功能开发中')
-  }
-
-  onMounted(() => {
-    fetchDepartments()
-    fetchData()
+  // 搜索表单
+  const searchForm = ref({
+    month: dayjs().format('YYYY-MM'),
+    employeeId: undefined,
+    departmentId: undefined
   })
-</script>
 
-<style scoped>
-  .search-wrapper {
-    padding: 18px 18px 0;
-    margin-bottom: 15px;
-    background-color: #fff;
-    border-radius: 4px;
+  const {
+    columns,
+    columnChecks,
+    data,
+    loading,
+    pagination,
+    getData,
+    searchParams,
+    resetSearchParams,
+    handleSizeChange,
+    handleCurrentChange,
+    refreshData
+  } = useTable({
+    // 核心配置
+    core: {
+      apiFn: (params: any) => getSalaryStatistics(params.month, params.employeeId, params.departmentId, params.page, params.size),
+      apiParams: {
+        ...searchForm.value
+      },
+      paginationKey: {
+        current: 'page',
+        size: 'size'
+      },
+      columnsFactory: () => [
+        { type: 'index', label: '序号', align: 'center', width: 60 },
+        { prop: 'userName', label: '姓名', minWidth: 100, fixed: 'left', align: 'center' },
+        { prop: 'employeeId', label: '工号', minWidth: 100, align: 'center' },
+        { prop: 'departmentName', label: '部门', minWidth: 120, align: 'center' },
+        {
+          prop: 'actualAttendanceDays',
+          label: '出勤天数',
+          minWidth: 120,
+          align: 'center',
+          formatter: (row: any) => `${row.actualAttendanceDays} / ${row.shouldAttendanceDays || '-'}`
+        },
+        {
+          prop: 'weekdayOvertimeHours',
+          label: '平时加班(h)',
+          minWidth: 120,
+          align: 'center',
+          formatter: (row: any) => {
+            if (row.weekdayOvertimeHours > 0) {
+              return h(ElTag, { type: 'success', size: 'small' }, () => row.weekdayOvertimeHours)
+            }
+            return '-'
+          }
+        },
+        {
+          prop: 'weekendOvertimeHours',
+          label: '周末加班(h)',
+          minWidth: 120,
+          align: 'center',
+          formatter: (row: any) => {
+            if (row.weekendOvertimeHours > 0) {
+              return h(ElTag, { type: 'warning', size: 'small' }, () => row.weekendOvertimeHours)
+            }
+            return '-'
+          }
+        },
+        {
+          prop: 'sickLeaveHours',
+          label: '病假(h)',
+          minWidth: 90,
+          align: 'center',
+          formatter: (row: any) => row.sickLeaveHours > 0 ? row.sickLeaveHours : '-'
+        },
+        {
+          prop: 'personalLeaveHours',
+          label: '事假(h)',
+          minWidth: 90,
+          align: 'center',
+          formatter: (row: any) => row.personalLeaveHours > 0 ? row.personalLeaveHours : '-'
+        },
+        {
+          prop: 'mealSubsidy',
+          label: '餐补',
+          minWidth: 120,
+          align: 'center',
+          formatter: (row: any) => `¥${row.mealSubsidy} (${row.mealCount}次)`
+        },
+        {
+          prop: 'grossSalary',
+          label: '应发工资',
+          minWidth: 150,
+          fixed: 'right',
+          align: 'center',
+          formatter: (row: any) => h('span', { class: 'text-red-500 font-bold' }, `¥${row.grossSalary}`)
+        }
+      ]
+    },
+    transform: {
+      responseAdapter: (res: any) => {
+        const data = res.data || {}
+        return {
+          records: data.content || [],
+          total: data.totalElements || 0,
+          current: data.number ? data.number + 1 : 1,
+          size: data.size || 10
+        }
+      }
+    }
+  })
+
+  /**
+   * 搜索处理
+   */
+  const handleSearch = (params: Record<string, any>) => {
+    Object.assign(searchParams, params)
+    getData()
   }
-</style>
+
+</script>

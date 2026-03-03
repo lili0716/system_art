@@ -9,6 +9,14 @@ export function fetchGetUserList(params: Api.SystemManage.UserSearchParams) {
   })
 }
 
+// 个人中心-更新自身基础信息或密码
+export function updateUserProfile(data: any) {
+  return request.put({
+    url: '/api/user/profile',
+    data
+  })
+}
+
 // 创建用户
 export function createUser(data: any) {
   return request.post({
@@ -285,10 +293,10 @@ export function getDepartmentOptions() {
   })
 }
 // 薪酬统计
-export function getSalaryStatistics(month: string, employeeId?: string, departmentId?: number) {
-  return request.get<any[]>({
+export function getSalaryStatistics(month: string, employeeId?: string, departmentId?: number, page?: number, size?: number) {
+  return request.get<any>({
     url: '/api/salary/statistics',
-    params: { month, employeeId, departmentId }
+    params: { month, employeeId, departmentId, page, size }
   })
 }
 
